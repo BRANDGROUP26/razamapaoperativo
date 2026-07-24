@@ -1,0 +1,1095 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mapas Operativos · RAZA.DO</title>
+<style>
+  :root {
+    --bg:#0A0A0A; --card:#1a1a1a; --card2:#141414; --border:#333333;
+    --teal:#00B4A0; --lime:#FFD400; --gold:#FFC000; --co:#FFD400; --red:#E63946;
+    --white:#FFFFFF; --gray:#808080; --gray2:#B3B3B3;
+    --heat0:#141414; --heat1:#3a3520; --heat2:#7a6d1a; --heat3:#E8B923; --heat4:#FFD400;
+    --yellow-soft:#F5DC7E; --yellow-pale:#FCEDB0;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--bg); color:var(--white); font-family:'Aptos','Poppins',-apple-system,sans-serif; overflow-x:hidden; }
+  .header { padding:26px 40px 18px; border-bottom:1px solid var(--border); background:linear-gradient(180deg,#0a0e14,var(--bg)); }
+  .brand-row { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
+  .brand { font-size:22px; font-weight:800; letter-spacing:-0.5px; }
+  .brand .do { color:var(--lime); }
+  .conf { font-size:10px; font-weight:700; color:var(--red); letter-spacing:2px; }
+  .title { font-size:28px; font-weight:800; letter-spacing:-0.6px; line-height:1.05; }
+  .title .hl { color:var(--lime); }
+  .subtitle { font-size:13.5px; color:var(--gray2); max-width:920px; margin-top:6px; line-height:1.4; }
+
+  .tabs { display:flex; gap:8px; padding:16px 40px; border-bottom:1px solid var(--border); background:var(--card2); }
+  .tab { padding:10px 20px; border-radius:24px; border:1px solid var(--border); background:transparent; color:var(--gray2); font-size:13px; font-weight:600; cursor:pointer; font-family:inherit; transition:all 0.2s; }
+  .tab:hover { border-color:var(--teal); color:var(--white); }
+  .tab.active { background:var(--lime); color:#07090D; border-color:var(--lime); }
+
+  .view { display:none; padding:30px 40px 50px; }
+  .view.active { display:block; }
+
+  /* ===== INTRO ===== */
+  .intro-lead { font-size:16px; color:var(--gray2); max-width:900px; line-height:1.5; margin:10px 0 40px; }
+  .intro-lead b { color:var(--white); }
+  .phases { display:flex; align-items:stretch; justify-content:center; gap:8px; flex-wrap:wrap; margin-bottom:44px; }
+  .phase { flex:1; min-width:240px; max-width:340px; background:var(--card); border:1px solid var(--border); border-radius:14px; padding:28px 24px; text-align:center; position:relative; transition:all 0.25s; cursor:default; }
+  .phase:hover { border-color:var(--lime); transform:translateY(-4px); box-shadow:0 12px 30px rgba(0,0,0,0.5); }
+  .phase-num { position:absolute; top:16px; right:20px; font-size:34px; font-weight:800; color:var(--border); font-family:'Aptos','Poppins',sans-serif; line-height:1; }
+  .phase-icon { color:var(--lime); margin:6px auto 18px; width:64px; height:64px; display:flex; align-items:center; justify-content:center; }
+  .phase[data-phase="1"] .phase-icon { color:var(--teal); }
+  .phase[data-phase="2"] .phase-icon { color:var(--gold); }
+  .phase[data-phase="3"] .phase-icon { color:var(--lime); }
+  .phase-weeks { font-size:11px; font-weight:700; color:var(--gray); letter-spacing:1.5px; text-transform:uppercase; margin-bottom:6px; }
+  .phase-title { font-size:26px; font-weight:800; color:var(--white); letter-spacing:0.5px; margin-bottom:14px; }
+  .phase-desc { font-size:13px; color:var(--gray2); line-height:1.45; margin-bottom:18px; }
+  .phase-tags { display:flex; gap:6px; justify-content:center; flex-wrap:wrap; }
+  .phase-tags span { font-size:10px; font-weight:700; padding:4px 10px; border-radius:12px; background:rgba(255,212,0,0.1); color:var(--lime); letter-spacing:0.5px; }
+  .phase[data-phase="1"] .phase-tags span { background:rgba(0,180,160,0.12); color:var(--teal); }
+  .phase[data-phase="2"] .phase-tags span { background:rgba(255,192,0,0.12); color:var(--gold); }
+  .phase-arrow { display:flex; align-items:center; color:var(--border); flex-shrink:0; }
+  @media(max-width:900px){ .phase-arrow{ transform:rotate(90deg); } }
+
+  .intro-flow-note { display:flex; gap:28px; justify-content:center; flex-wrap:wrap; padding:22px; background:var(--card2); border:1px solid var(--border); border-radius:12px; margin-bottom:26px; }
+  .ifn-item { font-size:13px; color:var(--gray2); display:flex; align-items:center; gap:9px; }
+  .ifn-item b { color:var(--white); }
+  .ifn-dot { width:12px; height:12px; border-radius:50%; flex-shrink:0; }
+  .intro-cta { text-align:center; font-size:14px; color:var(--gray); max-width:800px; margin:0 auto; line-height:1.5; }
+
+  /* ===== OPS CYCLE ===== */
+  .cycle-wrap { display:flex; justify-content:center; margin:20px 0; }
+  .cycle-canvas { position:relative; width:900px; height:760px; max-width:100%; }
+  .cycle-svg { position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:1; }
+  .cycle-center { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:250px; text-align:center; background:radial-gradient(circle, rgba(255,212,0,0.12), var(--card2)); border:2px solid var(--lime); border-radius:50%; height:250px; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:30px; z-index:2; }
+  .cc-label { font-size:10px; font-weight:800; color:var(--gray); letter-spacing:2px; }
+  .cc-main { font-size:34px; font-weight:800; color:var(--lime); margin:4px 0 8px; letter-spacing:0.5px; }
+  .cc-sub { font-size:10.5px; color:var(--gray2); line-height:1.35; margin-bottom:8px; }
+  .cc-cycle { font-size:11px; font-weight:700; color:var(--gold); background:rgba(255,192,0,0.12); padding:4px 12px; border-radius:12px; }
+  .cycle-node { position:absolute; width:210px; background:var(--card); border:1px solid var(--border); border-radius:12px; padding:14px 16px; z-index:3; transition:all 0.2s; cursor:default; }
+  .cycle-node:hover { border-color:var(--lime); transform:scale(1.04); box-shadow:0 8px 24px rgba(0,0,0,0.55); z-index:10; }
+  .cyc-icon { font-size:26px; margin-bottom:4px; }
+  .cyc-step { font-size:9px; font-weight:800; color:var(--gray); letter-spacing:1.5px; }
+  .cyc-title { font-size:15px; font-weight:800; color:var(--white); margin:3px 0 6px; }
+  .cyc-desc { font-size:11px; color:var(--gray2); line-height:1.35; margin-bottom:9px; }
+  .cyc-actor { font-size:10px; font-weight:700; border:1px solid; border-radius:8px; padding:4px 8px; display:inline-block; margin-bottom:7px; }
+  .cyc-metrics { font-size:9.5px; font-weight:700; color:var(--gold); background:rgba(255,192,0,0.1); padding:4px 8px; border-radius:8px; letter-spacing:0.3px; }
+
+  .cycle-legend { display:flex; gap:26px; justify-content:center; flex-wrap:wrap; padding:20px; background:var(--card2); border:1px solid var(--border); border-radius:12px; margin-top:14px; }
+  .cl-item { font-size:13px; color:var(--gray2); display:flex; align-items:center; gap:9px; }
+  .cl-item b { color:var(--white); }
+  .cl-dot { width:12px; height:12px; border-radius:50%; flex-shrink:0; }
+  .cl-arrow { font-size:18px; color:var(--gold); font-weight:800; }
+
+  /* ===== NEEDS ===== */
+  .needs-legend { display:flex; gap:26px; flex-wrap:wrap; padding:14px 18px; background:var(--card2); border:1px solid var(--border); border-radius:10px; margin-bottom:16px; }
+  .nl-item { font-size:12px; color:var(--gray2); display:flex; align-items:center; gap:8px; }
+  .nl-item b { color:var(--white); }
+  .sem { width:11px; height:11px; border-radius:50%; flex-shrink:0; display:inline-block; }
+  .sem-r { background:var(--red); box-shadow:0 0 7px rgba(230,57,70,0.75); }
+  .sem-y { background:var(--gold); }
+  .sem-g { background:#4CAF7D; }
+  .ni-head { display:flex; align-items:center; gap:9px; margin-bottom:5px; }
+  .ni-fecha { font-size:11px; font-weight:800; letter-spacing:0.5px; padding:3px 9px; border-radius:8px; background:var(--co); color:#000; }
+  .needs-group.urgente { border:1.5px solid var(--red); background:linear-gradient(135deg,rgba(230,57,70,0.06),var(--card)); }
+  .needs-groups { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:24px; }
+  .needs-group { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:22px; }
+  .needs-group.full { grid-column:1 / -1; }
+  .ng-header { margin-bottom:16px; padding-bottom:14px; border-bottom:1px solid var(--border); }
+  .ng-icon { font-size:30px; margin-bottom:6px; }
+  .ng-title { font-size:19px; font-weight:800; color:var(--white); }
+  .ng-sub { font-size:12px; color:var(--gray); margin-top:3px; }
+  .need-item { padding:13px 0; border-bottom:1px solid var(--border); }
+  .need-item:last-child { border-bottom:none; padding-bottom:0; }
+  .ni-name { font-size:15px; font-weight:700; color:var(--co); margin-bottom:6px; }
+  .ni-why { font-size:12.5px; color:var(--gray2); line-height:1.45; }
+  .ni-badges { display:flex; gap:6px; margin-bottom:8px; flex-wrap:wrap; }
+  .ni-badges span { font-size:11px; font-weight:800; padding:3px 11px; border-radius:10px; background:var(--co); color:#000; letter-spacing:0.5px; }
+  .needs-data-row { display:grid; grid-template-columns:1fr 1fr; gap:22px; }
+  @media(max-width:900px){ .needs-groups{ grid-template-columns:1fr; } .needs-data-row{ grid-template-columns:1fr; } }
+
+  .needs-closing { display:flex; gap:18px; align-items:center; padding:24px; background:linear-gradient(135deg,rgba(230,57,70,0.12),var(--card2)); border:1.5px solid var(--red); border-radius:14px; }
+  .nc-icon { font-size:40px; flex-shrink:0; }
+  .nc-text { font-size:15px; color:var(--gray2); line-height:1.5; }
+  .nc-text b { color:var(--white); }
+  .nc-text b:first-child { color:var(--red); }
+
+  /* ===== ALLOWLIST ===== */
+  .al-tension { display:flex; align-items:stretch; gap:14px; margin-bottom:14px; }
+  .al-t-box { flex:1; padding:22px; border-radius:14px; text-align:center; }
+  .al-t-box.lanz { background:linear-gradient(135deg,rgba(0,180,160,0.12),var(--card)); border:1.5px solid var(--teal); }
+  .al-t-box.perm { background:linear-gradient(135deg,rgba(230,57,70,0.1),var(--card)); border:1.5px solid var(--red); }
+  .al-t-label { font-size:11px; font-weight:800; letter-spacing:1.5px; color:var(--gray); margin-bottom:8px; }
+  .al-t-big { font-size:38px; font-weight:800; letter-spacing:-0.5px; }
+  .al-t-box.lanz .al-t-big { color:var(--teal); }
+  .al-t-box.perm .al-t-big { color:var(--red); }
+  .al-t-sub { font-size:12px; color:var(--gray2); margin-top:6px; line-height:1.35; }
+  .al-t-vs { display:flex; align-items:center; font-size:16px; font-weight:800; color:var(--gray); }
+  .al-resolve { font-size:13.5px; color:var(--gray2); line-height:1.5; padding:16px 18px; background:var(--card2); border:1px solid var(--border); border-radius:10px; border-left:3px solid var(--lime); margin-bottom:8px; }
+  .al-resolve b { color:var(--white); }
+
+  .al-platforms { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }
+  @media(max-width:900px){ .al-platforms{ grid-template-columns:1fr; } }
+  .al-plat { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:18px; }
+  .al-p-head { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:4px; }
+  .al-p-name { font-size:18px; font-weight:800; color:var(--white); }
+  .al-p-time { font-size:14px; font-weight:800; }
+  .al-p-proc { font-size:11.5px; color:var(--gray); margin-bottom:14px; }
+  .al-p-dates { display:flex; gap:10px; margin-bottom:14px; }
+  .al-p-dates div { flex:1; background:var(--card2); border:1px solid var(--border); border-radius:8px; padding:8px 10px; }
+  .al-p-dates span { font-size:9.5px; color:var(--gray); display:block; letter-spacing:0.5px; text-transform:uppercase; }
+  .al-p-dates b { font-size:15px; color:var(--white); }
+  .al-p-status { font-size:11.5px; line-height:1.4; padding:9px 11px; border-radius:8px; }
+  .al-p-status.ok { background:rgba(76,175,125,0.1); border:1px solid rgba(76,175,125,0.35); color:#8fd4ae; }
+  .al-p-status.warn { background:rgba(255,192,0,0.1); border:1px solid rgba(255,192,0,0.35); color:#e8c56a; }
+  .al-p-status.danger { background:rgba(230,57,70,0.1); border:1px solid rgba(230,57,70,0.35); color:#f0929a; }
+
+  .al-reqs { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  @media(max-width:900px){ .al-reqs{ grid-template-columns:1fr; } }
+  .al-req-group { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:18px; }
+  .al-rg-title { font-size:14px; font-weight:800; color:var(--white); margin-bottom:12px; padding-bottom:10px; border-bottom:1px solid var(--border); }
+  .al-req { padding:10px 0; border-bottom:1px solid var(--border); }
+  .al-req:last-child { border-bottom:none; padding-bottom:0; }
+  .al-req b { font-size:13.5px; color:var(--co); display:block; margin-bottom:3px; }
+  .al-req span { font-size:12px; color:var(--gray2); line-height:1.4; }
+  .al-req.critical { background:rgba(230,57,70,0.06); border-left:2px solid var(--red); border-radius:0 6px 6px 0; padding:10px 12px; margin-top:4px; }
+  .al-req.critical b { color:var(--red); }
+
+  /* ===== HEATMAP ===== */
+  .hm-section-title { font-size:12px; font-weight:800; letter-spacing:2px; color:var(--teal); text-transform:uppercase; margin:24px 0 12px; padding-left:10px; border-left:3px solid var(--teal); }
+  .hm-section-title.embudo { color:var(--gold); border-left-color:var(--gold); }
+  .hm-section-title.semana { color:var(--teal); border-left-color:var(--teal); }
+  .hm-rowlabel .rl-fecha { display:block; font-size:10px; color:var(--gray); font-weight:600; margin-top:2px; }
+  .heatmap { overflow-x:auto; }
+  .hm-grid { display:grid; min-width:1100px; border:1px solid var(--border); border-radius:8px; overflow:hidden; }
+  .hm-corner { background:var(--card2); padding:14px 12px; font-size:10px; font-weight:700; color:var(--gray); letter-spacing:1px; display:flex; align-items:flex-end; border-right:2px solid var(--border); border-bottom:2px solid var(--border); }
+  .hm-actor { background:var(--card2); padding:12px 6px; text-align:center; border-bottom:2px solid var(--border); border-right:1px solid var(--border); }
+  .hm-actor .a-name { font-size:11px; font-weight:700; color:var(--white); line-height:1.15; }
+  .hm-actor .a-side { font-size:8px; color:var(--gray); margin-top:2px; letter-spacing:0.5px; }
+  .hm-actor.ag { border-top:3px solid var(--lime); }
+  .hm-actor.cl { border-top:3px solid var(--co); }
+  .hm-rowlabel { background:var(--card2); padding:12px; font-size:12px; font-weight:600; color:var(--gray2); border-right:2px solid var(--border); border-bottom:1px solid var(--border); display:flex; align-items:center; }
+  .hm-cell { border-bottom:1px solid var(--border); border-right:1px solid var(--border); min-height:52px; display:flex; align-items:center; justify-content:center; cursor:default; position:relative; transition:transform 0.1s; }
+  .hm-cell:hover { transform:scale(1.08); z-index:5; box-shadow:0 0 0 2px var(--white); }
+  .hm-cell .lvl { font-size:9px; font-weight:800; letter-spacing:0.5px; }
+  .h0 { background:var(--heat0); } .h0 .lvl { color:#2a3a48; }
+  .h1 { background:var(--heat1); } .h1 .lvl { color:#7fb3bd; }
+  .h2 { background:var(--heat2); } .h2 .lvl { color:#c7f0f0; }
+  .h3 { background:var(--heat3); } .h3 .lvl { color:#1a1400; }
+  .h4 { background:var(--heat4); } .h4 .lvl { color:#fff; }
+
+  .hm-legend { display:flex; gap:20px; align-items:center; margin-top:18px; flex-wrap:wrap; }
+  .hm-scale { display:flex; align-items:center; gap:0; border-radius:6px; overflow:hidden; }
+  .hm-scale div { padding:6px 14px; font-size:10px; font-weight:700; }
+  .lg-note { font-size:11px; color:var(--gray); }
+
+  /* ===== BLUEPRINT ===== */
+  .bp-timeref { margin-bottom:16px; }
+  .btr-label { font-size:10px; font-weight:800; color:var(--gray); letter-spacing:1.5px; margin-bottom:7px; }
+  .btr-band { display:flex; gap:4px; min-width:1250px; }
+  .btr-seg { padding:9px 14px; border-radius:7px; background:var(--card); border:1px solid var(--border); border-top:3px solid var(--teal); }
+  .btr-seg b { font-size:12.5px; color:var(--white); display:block; }
+  .btr-seg span { font-size:10.5px; color:var(--gray); }
+  .btr-seg:nth-child(2) { border-top-color:var(--gold); }
+  .btr-seg:nth-child(3) { border-top-color:var(--lime); }
+  .btr-seg.live { border:1px solid var(--lime); border-top:3px solid var(--lime); background:linear-gradient(135deg,rgba(255,212,0,0.14),var(--card)); }
+  .btr-seg.live b { color:var(--lime); }
+  .btr-note { font-size:10.5px; color:var(--gray); margin-top:7px; font-style:italic; }
+  .bp-wrap { position:relative; overflow-x:auto; }
+  .bp-canvas { position:relative; min-width:1250px; height:870px; }
+  svg.bp-lines { position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:1; }
+  .bp-band-label { position:absolute; left:0; font-size:10px; font-weight:800; letter-spacing:1.5px; color:var(--gray); text-transform:uppercase; writing-mode:vertical-rl; transform:rotate(180deg); }
+  .bp-node { position:absolute; background:var(--card); border:1px solid var(--border); border-radius:8px; padding:10px 12px; width:150px; z-index:3; cursor:pointer; transition:all 0.15s; }
+  .bp-node:hover { border-color:var(--white); box-shadow:0 6px 18px rgba(0,0,0,0.5); transform:translateY(-2px); z-index:10; }
+  .bp-node .n-title { font-size:11.5px; font-weight:700; color:var(--white); line-height:1.15; margin-bottom:3px; }
+  .bp-node .n-role { font-size:8.5px; color:var(--gray); letter-spacing:0.5px; }
+  .bp-node.ag { border-left:3px solid var(--lime); }
+  .bp-node.cl { border-left:3px solid var(--co); }
+  .bp-node.legal { border-left:3px solid var(--red); }
+  .bp-node.decision { background:linear-gradient(135deg,rgba(255,212,0,0.15),var(--card)); border:1.5px solid var(--gold); border-radius:50px; text-align:center; width:130px; }
+  .bp-node.decision .n-title { color:var(--gold); }
+  .bp-node.milestone { background:linear-gradient(135deg,rgba(255,212,0,0.20),var(--card)); border:1.5px solid var(--lime); }
+  .bp-node.milestone .n-title { color:var(--lime); }
+  .bp-node.data { border-left:3px solid var(--teal); }
+  .bp-node.data-mile { background:linear-gradient(135deg,rgba(0,180,160,0.20),var(--card)); border:1.5px solid var(--teal); }
+  .bp-node.data-mile .n-title { color:var(--teal); }
+  .bp-node.teaser { background:linear-gradient(135deg,rgba(255,212,0,0.16),var(--card)); border:1.5px dashed var(--lime); cursor:pointer; }
+  .bp-node.teaser .n-title { color:var(--lime); }
+  .bp-node.teaser:hover { background:var(--lime); border-style:solid; }
+  .bp-node.teaser:hover .n-title, .bp-node.teaser:hover .n-role { color:#000; }
+
+  /* FOCUS MODE */
+  .bp-canvas.focus-active .bp-node { opacity:0.15; filter:grayscale(0.7); transition:all 0.25s; }
+  .bp-canvas.focus-active .bp-node.focused { opacity:1; filter:none; transform:scale(1.06); box-shadow:0 0 0 2px var(--lime), 0 8px 24px rgba(0,0,0,0.6); z-index:20; }
+  .bp-canvas.focus-active .bp-node.connected { opacity:1; filter:none; box-shadow:0 0 0 1px var(--gold); }
+  .bp-canvas.focus-active svg path { opacity:0.06 !important; transition:opacity 0.25s; }
+  .bp-canvas.focus-active svg path.edge-active { opacity:0.95 !important; stroke-width:3 !important; }
+  .focus-hint { position:absolute; top:8px; right:16px; font-size:11px; color:var(--gold); background:rgba(255,212,0,0.1); padding:5px 12px; border-radius:14px; display:none; z-index:30; cursor:pointer; border:1px solid var(--gold); }
+  .bp-canvas.focus-active .focus-hint { display:block; }
+
+  .bp-swimlane { position:absolute; left:60px; right:0; height:1px; }
+  .bp-lane-bg { position:absolute; left:40px; right:20px; border-radius:8px; z-index:0; }
+
+  .bp-legend { display:flex; gap:22px; margin-top:20px; flex-wrap:wrap; font-size:11px; color:var(--gray); }
+  .bp-legend-item { display:flex; align-items:center; gap:7px; }
+  .line-sample { width:28px; height:0; border-top-width:2px; border-top-style:solid; }
+  .node-sample { width:14px; height:14px; border-radius:3px; }
+
+  .tooltip { position:fixed; background:#000; border:1px solid var(--teal); border-radius:6px; padding:8px 11px; font-size:11px; color:var(--gray2); max-width:240px; z-index:999; pointer-events:none; display:none; line-height:1.35; box-shadow:0 6px 20px rgba(0,0,0,0.6); }
+  .tooltip .tt-title { color:var(--white); font-weight:700; margin-bottom:3px; }
+
+  .footer { padding:20px 40px; font-size:10px; color:var(--gray); border-top:1px solid var(--border); }
+  .footer b { color:var(--teal); }
+  .hint { font-size:11px; color:var(--gold); background:rgba(245,197,24,0.06); padding:10px 14px; border-radius:6px; margin-bottom:18px; }
+</style>
+</head>
+<body>
+  <div class="header">
+    <div class="brand-row">
+      <img src="data:image/png;base64,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" alt="brand group" style="height:50px;width:auto;display:block;" />
+      <div class="conf">CONFIDENCIAL · USO INTERNO JUNTA</div>
+    </div>
+    <div class="title">MAPAS OPERATIVOS · <span class="hl">QUIÉN HACE QUÉ Y CÓMO FLUYE</span></div>
+    <div class="subtitle">Dos lecturas del despliegue. El mapa de calor muestra la carga de trabajo de cada actor por eje y por etapa del embudo. El mapa táctico muestra cómo fluye el trabajo entre todos, con entregables y puntos de decisión.</div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="showView('intro', this)">Intro · El proceso</button>
+    <button class="tab" onclick="showView('needs', this)">Lo que necesitamos de RAZA.DO</button>
+    <button class="tab" onclick="showView('heat', this)">Mapa de calor · Carga</button>
+    <button class="tab" onclick="showView('blueprint', this)">Mapa táctico · Blueprint</button>
+    <button class="tab" onclick="showView('allowlist', this)">Allowlist y habilitación</button>
+    <button class="tab" onclick="showView('ops', this)">Operación y datos</button>
+  </div>
+
+  <!-- ===================== INTRO VIEW ===================== -->
+  <div class="view active" id="view-intro">
+    <div class="intro-lead">El lanzamiento digital de RAZA.DO recorre <b>tres grandes fases</b> en 8 semanas hábiles. Arranca el <b>lunes 27 de julio</b> y sale al aire el <b>miércoles 9 de septiembre</b>. Esta es la vista panorámica antes de entrar al detalle.</div>
+
+    <div class="phases">
+      <div class="phase" data-phase="1">
+        <div class="phase-num">01</div>
+        <div class="phase-icon">
+          <svg viewBox="0 0 64 64" width="64" height="64" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="32" cy="32" r="6"/><path d="M32 8v8M32 48v8M8 32h8M48 32h8M15 15l6 6M43 43l6 6M49 15l-6 6M21 43l-6 6"/>
+          </svg>
+        </div>
+        <div class="phase-weeks">27 jul al 7 ago · S1 y S2</div>
+        <div class="phase-title">ARRANQUE</div>
+        <div class="phase-desc">Redes al aire, marca lista y configuración técnica. Se prende el motor mientras se tramitan las licencias.</div>
+        <div class="phase-tags"><span>Redes</span><span>Marca</span><span>Config</span></div>
+      </div>
+
+      <div class="phase-arrow">
+        <svg viewBox="0 0 40 24" width="40" height="24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h28M24 4l8 8-8 8"/></svg>
+      </div>
+
+      <div class="phase" data-phase="2">
+        <div class="phase-num">02</div>
+        <div class="phase-icon">
+          <svg viewBox="0 0 64 64" width="64" height="64" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="10" y="14" width="44" height="32" rx="3"/><path d="M10 24h44M18 34h12M18 39h20"/><circle cx="46" cy="36" r="4"/>
+          </svg>
+        </div>
+        <div class="phase-weeks">10 al 28 ago · S3 a S5</div>
+        <div class="phase-title">CONSTRUCCIÓN</div>
+        <div class="phase-desc">Web, contenido, tracking y pruebas del flujo de registro, depósito y apuesta. Se arma todo lo que la pauta va a necesitar.</div>
+        <div class="phase-tags"><span>Web</span><span>Contenido</span><span>Pruebas</span></div>
+      </div>
+
+      <div class="phase-arrow">
+        <svg viewBox="0 0 40 24" width="40" height="24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h28M24 4l8 8-8 8"/></svg>
+      </div>
+
+      <div class="phase" data-phase="3">
+        <div class="phase-num">03</div>
+        <div class="phase-icon">
+          <svg viewBox="0 0 64 64" width="64" height="64" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M32 6l6 14 15 1-11 10 3 15-13-8-13 8 3-15-11-10 15-1z"/>
+          </svg>
+        </div>
+        <div class="phase-weeks">31 ago al 18 sep · S6 a S8</div>
+        <div class="phase-title">AL AIRE</div>
+        <div class="phase-desc">Calentamiento de pauta, <b>al aire el 9 de septiembre</b> y arranque de la operación continua. El mercado ya ve a RAZA.DO.</div>
+        <div class="phase-tags"><span>Pauta</span><span>Data</span><span>Always-on</span></div>
+      </div>
+    </div>
+
+    <div class="intro-flow-note">
+      <div class="ifn-item"><span class="ifn-dot" style="background:var(--co)"></span> El <b>cliente</b> aprueba, entrega insumos y asegura la plataforma</div>
+      <div class="ifn-item"><span class="ifn-dot" style="background:var(--lime)"></span> La <b>agencia</b> ejecuta marca, redes, web, pauta y medición</div>
+      <div class="ifn-item"><span class="ifn-dot" style="background:var(--red)"></span> Las <b>licencias</b> corren en paralelo y habilitan el go-live</div>
+    </div>
+
+    <div class="intro-cta">
+      Para ver quién carga más trabajo en cada fase, entra a <b onclick="document.querySelectorAll('.tab')[1].click()" style="color:var(--lime);cursor:pointer">Mapa de calor</b>. Para ver cómo fluye el trabajo entre todos, entra a <b onclick="document.querySelectorAll('.tab')[2].click()" style="color:var(--lime);cursor:pointer">Mapa táctico</b>.
+    </div>
+  </div>
+
+  <!-- ===================== NEEDS VIEW ===================== -->
+  <div class="view" id="view-needs">
+    <div class="intro-lead">Este es un trabajo <b>de dos</b>. La agencia ejecuta marca, redes, web, pauta y medición. Para salir al aire el <b>9 de septiembre</b> necesitamos esto de RAZA.DO en estas fechas. El semáforo muestra qué pasa si un insumo se atrasa.</div>
+
+    <div class="needs-legend">
+      <div class="nl-item"><span class="sem sem-r"></span> <b>Corre el go-live</b> día por día</div>
+      <div class="nl-item"><span class="sem sem-y"></span> <b>Comprime otra fase</b>, se absorbe con sobrecosto</div>
+      <div class="nl-item"><span class="sem sem-g"></span> <b>Absorbible</b> sin mover la fecha</div>
+    </div>
+
+    <div class="needs-groups">
+      <!-- GRUPO 0: Accesos base -->
+      <div class="needs-group full urgente">
+        <div class="ng-header">
+          <div class="ng-icon" style="color:var(--red)">🔑</div>
+          <div class="ng-title">Accesos base · lo primero que necesitamos</div>
+          <div class="ng-sub">Sin esto la agencia no puede configurar nada. Es la cadena crítica del proyecto</div>
+        </div>
+        <div class="needs-data-row">
+          <div class="need-item">
+            <div class="ni-head"><span class="ni-fecha">Mié 29 jul</span><span class="sem sem-r"></span></div>
+            <div class="ni-name">Accesos a redes sociales</div>
+            <div class="ni-why">O la autorización para crearlas. Redes es <b>lo primero que sale al aire</b> y lo que genera movimiento mientras se tramitan las licencias. Cada día sin acceso es un día menos de comunidad construida antes del lanzamiento.</div>
+          </div>
+          <div class="need-item">
+            <div class="ni-head"><span class="ni-fecha">Mié 29 jul</span><span class="sem sem-r"></span></div>
+            <div class="ni-name">Accesos a dominio y hosting</div>
+            <div class="ni-why">Sin dominio no hay landing de expectativa ni de registro. Es el destino al que apunta toda la pauta, así que bloquea la salida completa.</div>
+          </div>
+          <div class="need-item">
+            <div class="ni-head"><span class="ni-fecha">Mié 29 jul</span><span class="sem sem-r"></span></div>
+            <div class="ni-name">Accesos a Business Manager y Google Ads</div>
+            <div class="ni-why">O la creación de las cuentas a nombre de RAZA.DO. Sin esto no se instala el píxel ni el tagging, y sin tagging la pauta corre a ciegas.</div>
+          </div>
+          <div class="need-item">
+            <div class="ni-head"><span class="ni-fecha">Mié 5 ago</span><span class="sem sem-r"></span></div>
+            <div class="ni-name">Accesos a la plataforma en pruebas</div>
+            <div class="ni-why">Ambiente de staging para instalar y validar los eventos de registro, depósito y apuesta. Es lo que permite medir el negocio, no solo el tráfico.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- GRUPO 1: Información y estrategia -->
+      <div class="needs-group">
+        <div class="ng-header">
+          <div class="ng-icon" style="color:var(--co)">📋</div>
+          <div class="ng-title">Información y estrategia</div>
+          <div class="ng-sub">La base para construir bien desde el día uno</div>
+        </div>
+        <div class="need-item">
+          <div class="ni-head"><span class="ni-fecha">Lun 27 jul</span><span class="sem sem-r"></span></div>
+          <div class="ni-name">Plan de mercadeo</div>
+          <div class="ni-why">Objetivos comerciales, promociones y calendario del negocio. Sin el plan la agencia trabaja a ciegas y todo lo que se produzca hay que rehacerlo.</div>
+        </div>
+        <div class="need-item">
+          <div class="ni-head"><span class="ni-fecha">Lun 27 jul</span><span class="sem sem-r"></span></div>
+          <div class="ni-name">Manual de marca y activos</div>
+          <div class="ni-why">Logos, tipografías, tono y lineamientos legales de comunicación de juego. Diseño no puede producir ni una pieza sin esto.</div>
+        </div>
+        <div class="need-item">
+          <div class="ni-head"><span class="ni-fecha">Lun 27 jul</span><span class="sem sem-y"></span></div>
+          <div class="ni-name">Cifras del negocio</div>
+          <div class="ni-why">Metas de usuarios, depósitos y presupuesto. Son el marco contra el cual se mide todo. Sin cifras no hay forma de saber si la inversión está funcionando.</div>
+        </div>
+        <div class="need-item">
+          <div class="ni-head"><span class="ni-fecha">Lun 3 ago</span><span class="sem sem-y"></span></div>
+          <div class="ni-name">Datos de producto</div>
+          <div class="ni-why">Cuotas, promociones y mecánica de bonos. Sin esto Contenido no puede escribir nada específico y se queda en mensajes genéricos de marca.</div>
+        </div>
+      </div>
+
+      <!-- GRUPO 2: Equipo y comunicación -->
+      <div class="needs-group">
+        <div class="ng-header">
+          <div class="ng-icon" style="color:var(--co)">👥</div>
+          <div class="ng-title">Equipo y comunicación</div>
+          <div class="ng-sub">Las personas que hacen que todo fluya</div>
+        </div>
+        <div class="need-item">
+          <div class="ni-head"><span class="ni-fecha">Lun 27 jul</span><span class="sem sem-r"></span></div>
+          <div class="ni-name">Puente de comunicación</div>
+          <div class="ni-why">Un contacto único y ágil que apruebe, resuelva dudas y desbloquee. Sin un puente claro las decisiones se traban y el proyecto pierde días en cada ronda.</div>
+        </div>
+        <div class="need-item">
+          <div class="ni-head"><span class="ni-fecha">Mié 5 ago</span><span class="sem sem-y"></span></div>
+          <div class="ni-name">Equipo de informe o BI</div>
+          <div class="ni-why">Quien entregue y valide los datos de la plataforma. Conecta lo que pasa en el producto con lo que la agencia mide en marketing.</div>
+        </div>
+        <div class="need-item">
+          <div class="ni-head"><span class="ni-fecha">Desde S1</span><span class="sem sem-y"></span></div>
+          <div class="ni-name">Reuniones cada 8 días</div>
+          <div class="ni-why">Durante el lanzamiento son de avance y desbloqueo. Desde el 14 de septiembre pasan a ser de resultados. Es donde marketing y operaciones deciden antes de que se pierda inversión.</div>
+        </div>
+      </div>
+
+      <!-- GRUPO 3: Acceso a datos -->
+      <div class="needs-group full">
+        <div class="ng-header">
+          <div class="ng-icon" style="color:var(--co)">📊</div>
+          <div class="ng-title">Acceso a datos</div>
+          <div class="ng-sub">Lo que permite cerrar el match entre inversión y resultado</div>
+        </div>
+        <div class="needs-data-row">
+          <div class="need-item">
+            <div class="ni-head"><span class="ni-fecha">Mié 5 ago</span><span class="sem sem-r"></span></div>
+            <div class="ni-name">Acceso a KPI críticos del mercado</div>
+            <div class="ni-badges"><span>FTD</span><span>Registros</span><span>GGR</span></div>
+            <div class="ni-why">Son el corazón del negocio: cuántos se registran, cuántos depositan por primera vez y cuánto ingreso genera. Sin acceso, la agencia optimiza sin saber si trae jugadores rentables. Es lo que permite calcular el CAC y el ROAS reales.</div>
+          </div>
+          <div class="need-item">
+            <div class="ni-head"><span class="ni-fecha">Vie 31 jul</span><span class="sem sem-g"></span></div>
+            <div class="ni-name">Proyecciones semanales</div>
+            <div class="ni-why">Saber a dónde apunta el negocio cada semana permite anticipar, no solo reaccionar. Con las proyecciones la pauta y el contenido se ajustan a lo que viene, no a lo que ya pasó.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="needs-closing">
+      <div class="nc-icon">⚠️</div>
+      <div class="nc-text"><b>El cuello de botella no es la agencia, es el miércoles 29 de julio.</b> Si los accesos base no están ese día, el go-live del 9 de septiembre se corre día por día. No es una advertencia, es aritmética: no se puede configurar lo que no se tiene. Los datos críticos (FTD, registros, GGR) son los que permiten demostrarle a la junta, con números reales, que cada peso invertido está volviendo multiplicado.</div>
+    </div>
+  </div>
+
+  <!-- ===================== HEATMAP VIEW ===================== -->
+  <div class="view" id="view-heat">
+    <div class="hint">Tres lecturas de la misma operación: por <b>eje de trabajo</b>, por <b>etapa del embudo</b> y por <b>semana con fechas reales</b>. Entre más caliente la celda, más peso carga ese actor. Pasa el mouse por cualquier celda para ver el detalle.</div>
+
+    <div class="hm-section-title">Carga por eje de trabajo</div>
+    <div class="heatmap">
+      <div class="hm-grid" id="hm-ejes"></div>
+    </div>
+
+    <div class="hm-section-title embudo">Carga por etapa del embudo</div>
+    <div class="heatmap">
+      <div class="hm-grid" id="hm-embudo"></div>
+    </div>
+
+    <div class="hm-section-title semana">Carga por semana · arranque lunes 27 de julio</div>
+    <div class="heatmap">
+      <div class="hm-grid" id="hm-semanas"></div>
+    </div>
+
+    <div class="hm-legend">
+      <span class="lg-note" style="font-weight:700;color:var(--gray2)">Carga de trabajo:</span>
+      <div class="hm-scale">
+        <div class="h0">Ninguna</div>
+        <div class="h1">Baja</div>
+        <div class="h2">Media</div>
+        <div class="h3">Alta</div>
+        <div class="h4">Máxima</div>
+      </div>
+      <span class="lg-note">Verde/azul = apoyo · Amarillo/rojo = quien lidera y ejecuta</span>
+    </div>
+  </div>
+
+  <!-- ===================== BLUEPRINT VIEW ===================== -->
+  <div class="view" id="view-blueprint">
+    <div class="hint">Toca cualquier persona o proceso para <b>enfocarlo</b>: el resto se oscurece y se resaltan solo sus conexiones. El carril de <b>Data y seguimiento</b> muestra cómo se construye la medición desde el primer día y termina abriendo el ciclo de operación.</div>
+    <div class="bp-timeref">
+      <div class="btr-label">REFERENCIA DE TIEMPO</div>
+      <div class="btr-band">
+        <div class="btr-seg" style="flex:2"><b>Arranque</b><span>27 jul a 7 ago · S1 y S2</span></div>
+        <div class="btr-seg" style="flex:3"><b>Construcción</b><span>10 a 28 ago · S3 a S5</span></div>
+        <div class="btr-seg" style="flex:1"><b>Calentamiento</b><span>31 ago a 4 sep · S6</span></div>
+        <div class="btr-seg live" style="flex:1.4"><b>Al aire</b><span>9 sep · S7 y S8</span></div>
+      </div>
+      <div class="btr-note">El blueprint fluye de izquierda a derecha en el mismo orden. No es un cronograma exacto: los tiempos exactos están en el mapa de calor por semana.</div>
+    </div>
+    <div class="bp-wrap">
+      <div class="bp-canvas" id="bp-canvas">
+        <div class="focus-hint" id="focus-hint" onclick="clearFocus()">✕ Ver todo el flujo</div>
+        <svg class="bp-lines" id="bp-svg"></svg>
+      </div>
+    </div>
+    <div class="bp-legend">
+      <div class="bp-legend-item"><span class="node-sample" style="background:var(--lime)"></span> Agencia</div>
+      <div class="bp-legend-item"><span class="node-sample" style="background:var(--co)"></span> Cliente RAZA.DO</div>
+      <div class="bp-legend-item"><span class="node-sample" style="background:var(--teal)"></span> Data y seguimiento</div>
+      <div class="bp-legend-item"><span class="node-sample" style="background:var(--red)"></span> Legal / Licencias</div>
+      <div class="bp-legend-item"><span class="node-sample" style="background:var(--gold);border-radius:50%"></span> Punto de decisión</div>
+      <div class="bp-legend-item"><span class="line-sample" style="border-top-color:var(--teal)"></span> Entrega de trabajo</div>
+      <div class="bp-legend-item"><span class="line-sample" style="border-top-color:var(--lime);border-top-style:dotted;border-top-width:3px"></span> Flujo del dato</div>
+      <div class="bp-legend-item"><span class="line-sample" style="border-top-color:var(--gold);border-top-style:dashed"></span> Decisión / aprobación</div>
+    </div>
+  </div>
+
+  <!-- ===================== ALLOWLIST VIEW ===================== -->
+  <div class="view" id="view-allowlist">
+    <div class="intro-lead">Para hacer pauta paga de apuestas, cada plataforma exige una <b>habilitación previa</b> (allowlist o certificación). Estos tiempos <b>no dependen de la agencia ni del cliente</b>, dependen de cada plataforma, y son más largos que el propio lanzamiento. Por eso corren en paralelo desde el día uno.</div>
+
+    <div class="al-tension">
+      <div class="al-t-box lanz">
+        <div class="al-t-label">EL LANZAMIENTO</div>
+        <div class="al-t-big">6 semanas</div>
+        <div class="al-t-sub">Al aire el 9 de septiembre con marca, web, redes y contenido</div>
+      </div>
+      <div class="al-t-vs">vs</div>
+      <div class="al-t-box perm">
+        <div class="al-t-label">LA HABILITACIÓN DE PAUTA</div>
+        <div class="al-t-big">1 a 4 meses</div>
+        <div class="al-t-sub">Según la plataforma. Meta puede aprobar hasta después del go-live</div>
+      </div>
+    </div>
+    <div class="al-resolve">
+      <b>Cómo se resuelve:</b> el go-live del 9 de septiembre sale con <b>orgánico y lo que esté aprobado</b>. La pauta paga entra <b>por olas</b>, a medida que cada plataforma habilita. En Google, que no tiene soporte directo en RD, <b>abrimos la conversación y presionamos el caso en paralelo</b> con todos los mecanismos posibles. El reloj de cada allowlist corre desde que hay <b>cuentas creadas y documentos entregados</b> (día cero: 29 de julio), no desde el go-live.
+    </div>
+
+    <!-- Timeline por plataforma -->
+    <div class="ops-section-title" style="color:var(--lime);border-left-color:var(--lime)">Tiempos por plataforma · desde el día cero (29 jul)</div>
+    <div class="al-platforms">
+      <div class="al-plat">
+        <div class="al-p-head">
+          <div class="al-p-name">TikTok Ads</div>
+          <div class="al-p-time" style="color:#4CAF7D">1 a 2 meses</div>
+        </div>
+        <div class="al-p-proc">Allowlist de apuestas deportivas</div>
+        <div class="al-p-dates">
+          <div><span>Optimista</span><b>28 ago</b></div>
+          <div><span>Realista</span><b>27 sep</b></div>
+        </div>
+        <div class="al-p-status ok">Puede llegar cerca del go-live. Es la vía más rápida para la primera ola de pauta.</div>
+      </div>
+
+      <div class="al-plat">
+        <div class="al-p-head">
+          <div class="al-p-name">Meta Ads</div>
+          <div class="al-p-time" style="color:var(--gold)">3 a 4 meses</div>
+        </div>
+        <div class="al-p-proc">Certificación de apuestas deportivas</div>
+        <div class="al-p-dates">
+          <div><span>Optimista</span><b>27 oct</b></div>
+          <div><span>Realista</span><b>26 nov</b></div>
+        </div>
+        <div class="al-p-status warn">Llega 2 a 3 meses después del go-live. Meta paga arranca en Q4, no en el lanzamiento.</div>
+      </div>
+
+      <div class="al-plat">
+        <div class="al-p-head">
+          <div class="al-p-name">Google Ads</div>
+          <div class="al-p-time" style="color:var(--gold)">~4 meses*</div>
+        </div>
+        <div class="al-p-proc">Certificación de juego y apuestas</div>
+        <div class="al-p-dates">
+          <div><span>Seguimiento</span><b>26 nov</b></div>
+          <div><span>Estado</span><b style="color:var(--gold);font-size:12px">Gestión activa</b></div>
+        </div>
+        <div class="al-p-status warn">Sin soporte directo en RD, la fecha es tentativa (*). Abrimos la conversación con la plataforma y avanzamos con todos los mecanismos posibles en paralelo, presionando el caso hasta destrabarlo. No nos quedamos esperando.</div>
+      </div>
+    </div>
+
+    <!-- Requisitos del cliente -->
+    <div class="ops-section-title" style="color:var(--co);border-left-color:var(--co)">Lo que necesitamos para arrancar el reloj</div>
+    <div class="al-reqs">
+      <div class="al-req-group">
+        <div class="al-rg-title">🏢 Cuentas empresariales activas</div>
+        <div class="al-req"><b>Cuenta activa y limpia</b><span>Perfiles empresariales de TikTok, Meta y Google sin bloqueos, strikes ni restricciones. Cualquier penalización previa retrasa o impide la aprobación.</span></div>
+        <div class="al-req"><b>Nombre consistente</b><span>El perfil debe reflejar el nombre comercial oficial (Raza.do), igual que en la documentación legal.</span></div>
+      </div>
+      <div class="al-req-group">
+        <div class="al-rg-title">📄 Documentación legal</div>
+        <div class="al-req"><b>RNC</b><span>Registro Nacional del Contribuyente. Documento legal de funcionamiento de la empresa. Debe coincidir con la razón social de la licencia. PDF legible.</span></div>
+        <div class="al-req critical"><b>Licencia de operación vigente</b><span>Expedida por el regulador que autoriza apuestas deportivas en República Dominicana. Es el documento más crítico: sin licencia vigente, los algoritmos no procesan la solicitud bajo ninguna circunstancia. Verificar vencimiento antes de enviar. PDF legible.</span></div>
+      </div>
+    </div>
+
+    <div class="needs-closing" style="background:linear-gradient(135deg,rgba(255,212,0,0.1),var(--card2));border-color:var(--lime)">
+      <div class="nc-icon">⏱️</div>
+      <div class="nc-text" style=""><b style="color:var(--lime)">El reloj no arranca solo.</b> Cada semana que las cuentas y los documentos no estén listos es una semana que se suma a los 1 a 4 meses de cada plataforma. Entregar esto rápido no acelera a la plataforma, pero no entregarlo sí retrasa todo. Es lo primero que hay que resolver, incluso antes del arranque del lanzamiento.</div>
+    </div>
+  </div>
+
+  <div class="view" id="view-ops">
+    <div class="intro-lead">Lanzar es solo el arranque. La <b>operación continua</b> es un ciclo que gira cada 8 días. El dato se genera, se lee con RAZA.DO, se decide y se ejecuta. Y vuelve a empezar. Cada actor entra en su punto.</div>
+
+    <div class="cycle-wrap">
+      <div class="cycle-canvas" id="cycle-canvas">
+        <svg class="cycle-svg" id="cycle-svg" viewBox="0 0 900 760"></svg>
+
+        <!-- centro: el match -->
+        <div class="cycle-center">
+          <div class="cc-label">EL MATCH</div>
+          <div class="cc-main">LTV &gt; CAC</div>
+          <div class="cc-sub">Si el valor de vida del jugador supera lo que cuesta traerlo, la máquina es rentable. Ese es el número que todo el ciclo persigue.</div>
+          <div class="cc-cycle">↻ cada 8 días · desde el 14 sep</div>
+        </div>
+
+        <!-- 5 nodos del ciclo -->
+        <div class="cycle-node" id="cyc-1" style="left:345px; top:8px;">
+          <div class="cyc-icon">📲</div>
+          <div class="cyc-step">PASO 1</div>
+          <div class="cyc-title">Se genera el dato</div>
+          <div class="cyc-desc">Cada registro, depósito y apuesta dispara un evento en la plataforma.</div>
+          <div class="cyc-actor" style="border-color:var(--co);color:var(--co)">▸ Cliente · Producto</div>
+          <div class="cyc-metrics">Registros · FTD · Ticket</div>
+        </div>
+
+        <div class="cycle-node" id="cyc-2" style="left:670px; top:240px;">
+          <div class="cyc-icon">🔗</div>
+          <div class="cyc-step">PASO 2</div>
+          <div class="cyc-title">Se captura y ordena</div>
+          <div class="cyc-desc">El tracking atribuye cada evento a su canal y lo une en el dashboard.</div>
+          <div class="cyc-actor" style="border-color:var(--lime);color:var(--lime)">▸ Agencia · Data</div>
+          <div class="cyc-metrics">CAC · ROAS</div>
+        </div>
+
+        <div class="cycle-node" id="cyc-3" style="left:525px; top:500px;">
+          <div class="cyc-icon">🤝</div>
+          <div class="cyc-step">PASO 3</div>
+          <div class="cyc-title">Se lee juntos</div>
+          <div class="cyc-desc">Reunión cada 8 días: se revisan los números contra la meta.</div>
+          <div class="cyc-actor" style="border-color:var(--co);color:var(--co)">▸ Marketing + Operaciones RAZA.DO</div>
+          <div class="cyc-metrics">Retención · Recompra</div>
+        </div>
+
+        <div class="cycle-node" id="cyc-4" style="left:165px; top:500px;">
+          <div class="cyc-icon">🎯</div>
+          <div class="cyc-step">PASO 4</div>
+          <div class="cyc-title">Se decide</div>
+          <div class="cyc-desc">Qué campañas suben, cuáles se apagan, dónde se reasigna presupuesto.</div>
+          <div class="cyc-actor" style="border-color:var(--co);color:var(--co)">▸ Gerencia decide con Agencia</div>
+          <div class="cyc-metrics">Presupuesto · Metas</div>
+        </div>
+
+        <div class="cycle-node" id="cyc-5" style="left:20px; top:240px;">
+          <div class="cyc-icon">⚡</div>
+          <div class="cyc-step">PASO 5</div>
+          <div class="cyc-title">Se ejecuta</div>
+          <div class="cyc-desc">La agencia aplica los cambios y el cliente ajusta plataforma o promos.</div>
+          <div class="cyc-actor" style="border-color:var(--lime);color:var(--lime)">▸ Agencia · Pauta + Cliente</div>
+          <div class="cyc-metrics">Optimización</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="cycle-legend">
+      <div class="cl-item"><span class="cl-dot" style="background:var(--co)"></span> Entra el <b>cliente</b> (marketing, operaciones, gerencia, producto)</div>
+      <div class="cl-item"><span class="cl-dot" style="background:var(--lime)"></span> Entra la <b>agencia</b> (data, pauta, estrategia)</div>
+      <div class="cl-item"><span class="cl-arrow">↻</span> El ciclo <b>se repite cada 8 días</b>, afinando el match LTV vs CAC</div>
+    </div>
+  </div>
+
+    <b>Brand Group</b> 2026 · Mapas operativos del lanzamiento RAZA.DO · La carga y el flujo son estimaciones de la operación real y pueden ajustarse según el alcance final.
+  </div>
+
+  <div class="tooltip" id="tooltip"></div>
+
+<script>
+// ============ HEATMAP DATA ============
+const actors = [
+  { id:"estrategia", name:"Estrategia", side:"AG", grp:"ag" },
+  { id:"social", name:"Social Media", side:"AG", grp:"ag" },
+  { id:"contenido", name:"Contenido", side:"AG", grp:"ag" },
+  { id:"diseno", name:"Diseño", side:"AG", grp:"ag" },
+  { id:"tecnico", name:"Técnico", side:"AG", grp:"ag" },
+  { id:"web", name:"Web/Dev", side:"AG", grp:"ag" },
+  { id:"pauta", name:"Pauta", side:"AG", grp:"ag" },
+  { id:"data", name:"Data", side:"AG", grp:"ag" },
+  { id:"cli_mkt", name:"Marketing", side:"CL", grp:"cl" },
+  { id:"cli_ops", name:"Operación", side:"CL", grp:"cl" },
+  { id:"cli_ger", name:"Gerencia", side:"CL", grp:"cl" },
+  { id:"cli_tech", name:"Producto", side:"CL", grp:"cl" },
+];
+
+// niveles 0-4 por [eje][actor]  (orden de actors arriba)
+const ejes = [
+  { name:"Marca", loads:[2,1,2,4,0,1,0,0, 3,0,2,0], note:"Diseño lidera la identidad, Marketing del cliente aprueba y da lineamientos." },
+  { name:"Web", loads:[1,0,1,2,3,4,0,1, 0,2,0,4], note:"Web de agencia y Producto del cliente cargan el desarrollo. Técnico integra el tracking." },
+  { name:"Redes", loads:[1,4,3,2,0,0,1,1, 2,0,0,0], note:"Social Media lidera, Contenido produce, Marketing del cliente valida." },
+  { name:"Pauta", loads:[2,1,2,2,1,1,4,2, 1,1,2,0], note:"Pauta lidera el media buying, Gerencia del cliente aprueba presupuesto." },
+  { name:"Técnico", loads:[1,1,0,0,4,2,1,2, 0,2,0,3], note:"Técnico de agencia lidera config y tracking, Producto del cliente asegura plataforma." },
+  { name:"Data", loads:[2,1,0,0,2,1,2,4, 0,1,2,1], note:"Data lidera la medición, se nutre de todos los canales." },
+  { name:"Legal", loads:[1,0,0,0,1,1,1,0, 1,3,3,2], note:"Operación y Gerencia del cliente lideran licencias. Legal es transversal." },
+];
+
+// embudo
+const embudo = [
+  { name:"Alcance", loads:[2,4,3,3,1,1,3,1, 2,0,1,0], note:"Redes y pauta de alcance masivo. Diseño y contenido alimentan las piezas." },
+  { name:"Interacción", loads:[2,3,4,2,2,3,2,2, 2,1,0,2], note:"Contenido y web cargan la interacción. Data mide el engagement." },
+  { name:"Conversión", loads:[3,1,2,2,4,4,4,4, 1,3,2,4], note:"Técnico, web, pauta y data al máximo. El cliente asegura el flujo de registro y depósito." },
+];
+
+function levelName(n) { return ["Ninguna","Baja","Media","Alta","Máxima"][n]; }
+function levelShort(n) { return ["","·","○","◐","●"][n]; }
+
+function buildHeatmap(containerId, rows, cornerLabel) {
+  const c = document.getElementById(containerId);
+  c.style.gridTemplateColumns = `160px repeat(${actors.length}, 1fr)`;
+  // corner
+  const corner = document.createElement('div');
+  corner.className = 'hm-corner';
+  corner.textContent = cornerLabel || 'EJE / ACTOR';
+  c.appendChild(corner);
+  // actor headers
+  actors.forEach(a => {
+    const h = document.createElement('div');
+    h.className = 'hm-actor ' + a.grp;
+    h.innerHTML = `<div class="a-name">${a.name}</div><div class="a-side">${a.side==='AG'?'Agencia':'Cliente'}</div>`;
+    c.appendChild(h);
+  });
+  // rows
+  rows.forEach(row => {
+    const rl = document.createElement('div');
+    rl.className = 'hm-rowlabel';
+    rl.innerHTML = row.fecha ? `<div>${row.name}<span class="rl-fecha">${row.fecha}</span></div>` : row.name;
+    c.appendChild(rl);
+    row.loads.forEach((lv, i) => {
+      const cell = document.createElement('div');
+      cell.className = 'hm-cell h' + lv;
+      cell.innerHTML = `<span class="lvl">${levelShort(lv)}</span>`;
+      cell.onmousemove = (e) => showTip(e, `${actors[i].name} · ${row.name}`, `Carga: ${levelName(lv)}. ${row.note}`);
+      cell.onmouseleave = hideTip;
+      c.appendChild(cell);
+    });
+  });
+}
+
+buildHeatmap('hm-ejes', ejes);
+buildHeatmap('hm-embudo', embudo);
+
+// carga por semana · arranque lunes 27 jul 2026 · orden de actores igual al de arriba
+const semanas = [
+  { name:"S1 · Arranque", fecha:"27 a 31 jul", loads:[4,4,0,4,4,0,0,1, 4,2,4,1],
+    note:"El cliente entrega marca, plan y los accesos base. Social y Técnico salen primero. Web y Contenido todavía esperan insumos." },
+  { name:"S2 · Arranque", fecha:"3 a 7 ago", loads:[4,4,3,4,4,3,1,1, 2,4,1,3],
+    note:"Con los accesos ya entregados arranca Web, Contenido y el tagging. Operación del cliente carga al máximo entregando accesos y datos de producto." },
+  { name:"S3 · Construcción", fecha:"10 a 14 ago", loads:[1,3,4,4,3,4,1,2, 3,3,0,4],
+    note:"Producción a full: Diseño, Contenido y Web al máximo. Producto del cliente construye la plataforma. Estrategia baja a acompañamiento." },
+  { name:"S4 · Construcción", fecha:"17 a 21 ago", loads:[1,3,4,4,4,4,2,4, 3,3,1,4],
+    note:"La semana más cargada del proyecto. Tagging, pruebas, dashboard y contenido de conversión al tiempo. El cliente entrega el ambiente de pruebas." },
+  { name:"S5 · Construcción", fecha:"24 a 28 ago", loads:[2,3,3,3,4,4,4,4, 3,4,1,4],
+    note:"Semana bisagra: se valida el flujo de registro, depósito y apuesta, y se monta la pauta. Prueba de carga del lado del cliente." },
+  { name:"S6 · Calentamiento", fecha:"31 ago a 4 sep", loads:[3,4,2,2,2,2,4,3, 2,3,4,2],
+    note:"Pauta en calentamiento con presupuesto bajo. Gerencia da la luz verde. Social arranca comunidad en vivo." },
+  { name:"S7 · Al aire", fecha:"7 a 11 sep", loads:[3,4,2,1,2,2,4,3, 1,1,1,2],
+    note:"Al aire con todo el 9 de septiembre. Pauta escala, Social y Data cargan la operación diaria." },
+  { name:"S8 · Operación", fecha:"14 a 18 sep", loads:[2,3,2,1,1,2,4,3, 1,1,2,1],
+    note:"Arranca el ciclo de 8 días. Pauta y Data sostienen la operación continua. La carga del cliente baja a lectura de resultados." },
+];
+buildHeatmap('hm-semanas', semanas, 'SEMANA / ACTOR');
+
+// ============ BLUEPRINT DATA ============
+// swimlanes (y bands)
+const lanes = [
+  { name:"CLIENTE", y:36, color:"rgba(255,212,0,0.04)", h:128 },
+  { name:"AGENCIA", y:180, color:"rgba(255,212,0,0.03)", h:330 },
+  { name:"DATA Y SEGUIMIENTO", y:526, color:"rgba(0,180,160,0.07)", h:118 },
+  { name:"DECISIÓN", y:660, color:"rgba(255,192,0,0.05)", h:86 },
+  { name:"LEGAL", y:762, color:"rgba(230,57,70,0.04)", h:92 },
+];
+
+// nodes: id, label, role, x, y, type(ag/cl/legal/decision/milestone)
+const nodes = [
+  // cliente
+  { id:"brief", label:"Brief y marca", role:"Cliente · Marketing", x:40, y:62, type:"cl" },
+  { id:"accesos", label:"Accesos y datos de producto", role:"Cliente · Operación", x:230, y:62, type:"cl" },
+  { id:"plataforma", label:"Plataforma de juego", role:"Cliente · Producto", x:620, y:62, type:"cl" },
+  { id:"insumos_legal", label:"Insumos legales", role:"Cliente · Operación", x:820, y:102, type:"cl" },
+
+  // agencia
+  { id:"estrategia", label:"Estrategia y plan", role:"Agencia · Planning", x:230, y:210, type:"ag" },
+  { id:"diseno", label:"Identidad y piezas", role:"Agencia · Diseño", x:420, y:210, type:"ag" },
+  { id:"contenido", label:"Contenido", role:"Agencia · Copy+Video", x:610, y:260, type:"ag" },
+  { id:"social", label:"Redes al aire", role:"Agencia · Social", x:420, y:310, type:"ag" },
+  { id:"tecnico", label:"Config y tracking", role:"Agencia · Técnico", x:420, y:410, type:"ag" },
+  { id:"web", label:"Landing y registro", role:"Agencia · Web", x:620, y:410, type:"ag" },
+  { id:"pauta", label:"Pauta y escalamiento", role:"Agencia · Media", x:1010, y:310, type:"ag" },
+  { id:"live", label:"Lanzamiento al aire", role:"Hito", x:1010, y:440, type:"milestone" },
+
+  // data y seguimiento
+  { id:"eventos", label:"Eventos configurados", role:"Agencia · Técnico", x:230, y:552, type:"data" },
+  { id:"atribucion", label:"Atribución por canal", role:"Agencia · Data", x:430, y:552, type:"data" },
+  { id:"dashboard", label:"Dashboard en vivo", role:"Agencia · Data", x:630, y:552, type:"data" },
+  { id:"primer_dato", label:"Primer dato real", role:"Hito · registros y FTD", x:830, y:552, type:"data-mile" },
+  { id:"ciclo", label:"Ciclo de 8 días →", role:"Abre Operación y datos", x:1030, y:552, type:"teaser" },
+
+  // decision
+  { id:"dec_marca", label:"¿Marca OK?", role:"Decisión", x:250, y:686, type:"decision" },
+  { id:"dec_pruebas", label:"¿Flujo probado?", role:"Decisión", x:620, y:686, type:"decision" },
+  { id:"dec_golive", label:"¿Luz verde?", role:"Decisión · Gerencia", x:1010, y:686, type:"decision" },
+
+  // legal
+  { id:"licencia", label:"Licencia de operación", role:"Legal · Regulatorio", x:620, y:776, type:"legal" },
+];
+
+// edges: from, to, type(deliver/decision)
+const edges = [
+  // entregas de trabajo
+  { f:"brief", t:"estrategia", type:"deliver" },
+  { f:"accesos", t:"tecnico", type:"deliver" },
+  { f:"accesos", t:"web", type:"deliver" },
+  { f:"estrategia", t:"diseno", type:"deliver" },
+  { f:"estrategia", t:"social", type:"deliver" },
+  { f:"diseno", t:"social", type:"deliver" },
+  { f:"diseno", t:"contenido", type:"deliver" },
+  { f:"contenido", t:"social", type:"deliver" },
+  { f:"contenido", t:"web", type:"deliver" },
+  { f:"tecnico", t:"web", type:"deliver" },
+  { f:"web", t:"pauta", type:"deliver" },
+  { f:"plataforma", t:"web", type:"deliver" },
+  { f:"pauta", t:"live", type:"deliver" },
+  // flujo del dato
+  { f:"tecnico", t:"eventos", type:"data" },
+  { f:"plataforma", t:"eventos", type:"data" },
+  { f:"eventos", t:"atribucion", type:"data" },
+  { f:"web", t:"atribucion", type:"data" },
+  { f:"pauta", t:"atribucion", type:"data" },
+  { f:"atribucion", t:"dashboard", type:"data" },
+  { f:"dashboard", t:"pauta", type:"data" },
+  { f:"dashboard", t:"primer_dato", type:"data" },
+  { f:"live", t:"primer_dato", type:"data" },
+  { f:"primer_dato", t:"ciclo", type:"data" },
+  // decisiones
+  { f:"brief", t:"dec_marca", type:"decision" },
+  { f:"dec_marca", t:"diseno", type:"decision" },
+  { f:"plataforma", t:"dec_pruebas", type:"decision" },
+  { f:"web", t:"dec_pruebas", type:"decision" },
+  { f:"dec_pruebas", t:"dec_golive", type:"decision" },
+  { f:"dec_golive", t:"live", type:"decision" },
+  { f:"licencia", t:"dec_golive", type:"decision" },
+  { f:"insumos_legal", t:"licencia", type:"decision" },
+];
+
+const nodeDetails = {
+  brief:"El cliente entrega el manual de marca, activos oficiales y lineamientos de comunicación de juego.",
+  accesos:"Accesos a la plataforma, datos de cuotas, promociones y credenciales de dominios.",
+  plataforma:"El equipo técnico del cliente desarrolla y estabiliza el backend de registro, depósito y apuesta.",
+  insumos_legal:"Documentación y datos que el cliente entrega para tramitar la licencia.",
+  estrategia:"La agencia define objetivos, KPI, audiencias y el plan maestro de medios.",
+  diseno:"Identidad visual de campaña y todas las piezas gráficas para redes, web y pauta.",
+  social:"Redes es lo primero al aire: genera comunidad mientras se tramitan licencias.",
+  contenido:"Producción de videos, copies y guiones versionados por formato y canal.",
+  tecnico:"Configuración de cuentas, tagging transversal y pruebas de eventos y atribución.",
+  web:"Landing de expectativa primero, luego la de registro conectada a la plataforma.",
+  pauta:"Media buying con calentamiento y luego escalamiento por retorno.",
+  live:"Todo validado: licencia, plataforma estable, tracking OK y pauta lista.",
+  eventos:"Cada acción del usuario queda configurada como evento medible: registro, depósito, apuesta.",
+  atribucion:"Cada evento se amarra al canal y campaña que lo trajo. Sin esto no se sabe qué inversión funciona.",
+  dashboard:"Pauta, plataforma y CRM en una sola vista. El tablero que se lee en la reunión de cada 8 días.",
+  primer_dato:"El primer dato real de negocio: registros y primeros depósitos con nombre, canal y costo.",
+  ciclo:"Aquí arranca la operación continua. Toca para ver el ciclo de 8 días completo.",
+  dec_marca:"Marketing del cliente aprueba la marca antes de producir.",
+  dec_pruebas:"Cliente y agencia validan juntos que registro, depósito y apuesta funcionan.",
+  dec_golive:"Gerencia da la luz verde final para salir con todo.",
+  licencia:"Sin licencia no hay CTA de apuesta ni pauta de conversión. Bloquea el go-live.",
+};
+
+function renderBlueprint() {
+  const canvas = document.getElementById('bp-canvas');
+  const svg = document.getElementById('bp-svg');
+  // clear existing nodes (keep svg)
+  canvas.querySelectorAll('.bp-node,.bp-lane-bg,.bp-band-label').forEach(n=>n.remove());
+
+  // lane backgrounds
+  lanes.forEach(l => {
+    const bg = document.createElement('div');
+    bg.className = 'bp-lane-bg';
+    bg.style.top = l.y + 'px';
+    bg.style.height = l.h + 'px';
+    bg.style.background = l.color;
+    canvas.appendChild(bg);
+    const lbl = document.createElement('div');
+    lbl.className = 'bp-band-label';
+    lbl.style.top = (l.y + l.h/2 - 30) + 'px';
+    lbl.textContent = l.name;
+    canvas.appendChild(lbl);
+  });
+
+  // nodes
+  const nodeMap = {};
+  nodes.forEach(n => {
+    const el = document.createElement('div');
+    el.className = 'bp-node ' + n.type;
+    el.id = 'node-' + n.id;
+    el.dataset.nodeId = n.id;
+    el.style.left = n.x + 'px';
+    el.style.top = n.y + 'px';
+    el.innerHTML = `<div class="n-title">${n.label}</div><div class="n-role">${n.role}</div>`;
+    el.onmousemove = (e) => showTip(e, n.label, nodeDetails[n.id] || n.role);
+    el.onmouseleave = hideTip;
+    if (n.type === 'teaser') {
+      el.onclick = (ev) => {
+        ev.stopPropagation();
+        const opsTab = [...document.querySelectorAll('.tab')].find(t => t.textContent.includes('Operación'));
+        if (opsTab) opsTab.click();
+      };
+    } else {
+      el.onclick = (ev) => { ev.stopPropagation(); focusNode(n.id); };
+    }
+    canvas.appendChild(el);
+    nodeMap[n.id] = n;
+  });
+
+  // edges (draw after nodes so we can compute centers)
+  const NODE_W = 150, NODE_H = 44;
+  svg.innerHTML = '';
+  // arrow markers
+  svg.innerHTML = `<defs>
+    <marker id="arrow-teal" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#00B4A0"/></marker>
+    <marker id="arrow-gold" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#FFC000"/></marker>
+    <marker id="arrow-yellow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#FFD400"/></marker>
+  </defs>`;
+  edges.forEach(e => {
+    const a = nodeMap[e.f], b = nodeMap[e.t];
+    if (!a || !b) return;
+    const w1 = a.type==='decision'?130:150, w2 = b.type==='decision'?130:150;
+    const x1 = a.x + w1/2, y1 = a.y + NODE_H/2;
+    const x2 = b.x + w2/2, y2 = b.y + NODE_H/2;
+    // curved path
+    const dx = Math.abs(x2-x1);
+    const midX = (x1+x2)/2;
+    const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+    const c1x = x1 + (x2>x1? dx*0.4 : -dx*0.4);
+    const d = `M ${x1} ${y1} C ${midX} ${y1}, ${midX} ${y2}, ${x2} ${y2}`;
+    path.setAttribute('d', d);
+    path.setAttribute('fill','none');
+    path.dataset.from = e.f;
+    path.dataset.to = e.t;
+    path.classList.add('bp-edge');
+    if (e.type==='decision') {
+      path.setAttribute('stroke','#FFC000');
+      path.setAttribute('stroke-width','1.5');
+      path.setAttribute('stroke-dasharray','5,4');
+      path.setAttribute('marker-end','url(#arrow-gold)');
+      path.setAttribute('opacity','0.7');
+    } else if (e.type==='data') {
+      path.setAttribute('stroke','#FFD400');
+      path.setAttribute('stroke-width','2');
+      path.setAttribute('stroke-dasharray','1,5');
+      path.setAttribute('stroke-linecap','round');
+      path.setAttribute('marker-end','url(#arrow-yellow)');
+      path.setAttribute('opacity','0.8');
+    } else {
+      path.setAttribute('stroke','#00B4A0');
+      path.setAttribute('stroke-width','2');
+      path.setAttribute('marker-end','url(#arrow-teal)');
+      path.setAttribute('opacity','0.85');
+    }
+    svg.appendChild(path);
+  });
+}
+
+// ============ FOCUS MODE ============
+function focusNode(nodeId) {
+  const canvas = document.getElementById('bp-canvas');
+  canvas.classList.add('focus-active');
+  // limpiar estados previos
+  canvas.querySelectorAll('.bp-node').forEach(n => n.classList.remove('focused','connected'));
+  canvas.querySelectorAll('.bp-edge').forEach(p => p.classList.remove('edge-active'));
+  // marcar el nodo enfocado
+  const focusEl = document.getElementById('node-' + nodeId);
+  if (focusEl) focusEl.classList.add('focused');
+  // encontrar conexiones y nodos vecinos
+  const connected = new Set();
+  edges.forEach(e => {
+    if (e.f === nodeId || e.t === nodeId) {
+      const other = e.f === nodeId ? e.t : e.f;
+      connected.add(other);
+      // resaltar la línea
+      const path = canvas.querySelector(`.bp-edge[data-from="${e.f}"][data-to="${e.t}"]`);
+      if (path) path.classList.add('edge-active');
+    }
+  });
+  // marcar nodos conectados
+  connected.forEach(id => {
+    const el = document.getElementById('node-' + id);
+    if (el && !el.classList.contains('focused')) el.classList.add('connected');
+  });
+}
+
+function clearFocus() {
+  const canvas = document.getElementById('bp-canvas');
+  canvas.classList.remove('focus-active');
+  canvas.querySelectorAll('.bp-node').forEach(n => n.classList.remove('focused','connected'));
+  canvas.querySelectorAll('.bp-edge').forEach(p => p.classList.remove('edge-active'));
+}
+
+// clic en el fondo del canvas limpia el foco
+document.addEventListener('DOMContentLoaded', () => {
+  const canvas = document.getElementById('bp-canvas');
+  if (canvas) canvas.addEventListener('click', (e) => {
+    if (e.target === canvas || e.target.tagName === 'svg' || e.target.classList.contains('bp-lane-bg')) clearFocus();
+  });
+});
+
+// ============ CYCLE RENDER ============
+function renderCycle() {
+  const svg = document.getElementById('cycle-svg');
+  if (!svg) return;
+  // centros aproximados de cada nodo en el viewBox 900x620 (nodo ancho 210, alto ~150)
+  // posiciones left/top + mitad del tamaño
+  const nodeCenters = {
+    1: { x: 345+105, y: 8+114 },    // arriba centro
+    2: { x: 670+105, y: 240+114 },  // derecha
+    3: { x: 525+105, y: 500+114 },  // abajo derecha
+    4: { x: 165+105, y: 500+114 },  // abajo izquierda
+    5: { x: 20+105,  y: 240+114 },  // izquierda
+  };
+  const cx = 450, cy = 380; // centro del canvas
+  const order = [1,2,3,4,5,1]; // ciclo cerrado
+
+  svg.innerHTML = `<defs>
+    <marker id="cyc-arrow" markerWidth="10" markerHeight="10" refX="7" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#FFD400"/></marker>
+  </defs>`;
+
+  for (let i = 0; i < order.length - 1; i++) {
+    const a = nodeCenters[order[i]];
+    const b = nodeCenters[order[i+1]];
+    // punto de control: empujado hacia afuera del centro para curva circular
+    const midX = (a.x + b.x) / 2;
+    const midY = (a.y + b.y) / 2;
+    // vector desde centro al punto medio, extendido
+    const vx = midX - cx, vy = midY - cy;
+    const len = Math.sqrt(vx*vx + vy*vy) || 1;
+    const push = 55;
+    const ctrlX = midX + (vx/len) * push;
+    const ctrlY = midY + (vy/len) * push;
+    // acortar los extremos para no encimar el nodo
+    const shorten = (from, to, amt) => {
+      const dx = to.x - from.x, dy = to.y - from.y;
+      const d = Math.sqrt(dx*dx + dy*dy) || 1;
+      return { x: from.x + dx/d*amt, y: from.y + dy/d*amt };
+    };
+    const start = shorten(a, {x:ctrlX,y:ctrlY}, 115);
+    const end = shorten(b, {x:ctrlX,y:ctrlY}, 115);
+
+    const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+    path.setAttribute('d', `M ${start.x} ${start.y} Q ${ctrlX} ${ctrlY} ${end.x} ${end.y}`);
+    path.setAttribute('fill','none');
+    path.setAttribute('stroke','#FFD400');
+    path.setAttribute('stroke-width','2.5');
+    path.setAttribute('marker-end','url(#cyc-arrow)');
+    path.setAttribute('opacity','0.8');
+    svg.appendChild(path);
+  }
+}
+
+// ============ Tooltip ============
+const tooltip = document.getElementById('tooltip');
+function showTip(e, title, body) {
+  tooltip.innerHTML = `<div class="tt-title">${title}</div>${body}`;
+  tooltip.style.display = 'block';
+  let x = e.clientX + 14, y = e.clientY + 14;
+  if (x + 250 > window.innerWidth) x = e.clientX - 254;
+  if (y + 100 > window.innerHeight) y = e.clientY - 100;
+  tooltip.style.left = x + 'px';
+  tooltip.style.top = y + 'px';
+}
+function hideTip() { tooltip.style.display = 'none'; }
+
+// ============ View switch ============
+function showView(v, btn) {
+  document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+  document.getElementById('view-'+v).classList.add('active');
+  btn.classList.add('active');
+  if (v==='blueprint') setTimeout(renderBlueprint, 50);
+  if (v==='ops') setTimeout(renderCycle, 50);
+}
+
+// initial render of blueprint (hidden but ready)
+renderBlueprint();
+window.addEventListener('resize', () => { if(document.getElementById('view-blueprint').classList.contains('active')) renderBlueprint(); });
+</script>
+</body>
+</html>
