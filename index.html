@@ -1,0 +1,392 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Calendario Deportivo RAZA</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;800;900&display=swap">
+<style>
+/* Layout: marcador de estadio. Cabecera fija con pestañas por deporte, vista por semanas (lista) o por días (grilla mensual). Marca RAZA, una sola apariencia oscura. */
+:root{
+  --navy:#000238; --card:#141A5C; --card2:#0B1150; --line:#26307A;
+  --fg:#F2F4FF; --muted:#9AA3D9; --lime:#B4EC4F; --amber:#F5A623;
+  --c-beis:#B4EC4F; --c-basket:#F5A623; --c-voley:#5BD6F0; --c-futbol:#FF7BA3; --c-nfl:#C3A6FF; --c-combate:#FF6B5B;
+  --display:"Big Shoulders Display","Arial Narrow",Arial,sans-serif;
+  --body:-apple-system,"SF Pro Text","SF Pro",system-ui,"Segoe UI",Arial,sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--navy);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.45;margin:0}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--navy)}
+.wrap{max-width:1080px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 56px}
+header.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px 24px}
+.eyebrow{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--lime);font-weight:700}
+h1{font-family:var(--display);font-weight:900;font-size:clamp(40px,7vw,68px);line-height:.92;margin:6px 0 0;text-transform:uppercase;letter-spacing:.01em;text-wrap:balance}
+h1 span{color:var(--lime)}
+.range{font-family:var(--display);font-weight:800;font-size:20px;color:var(--muted);letter-spacing:.04em;text-transform:uppercase}
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--navy);padding-block:14px 12px;margin-top:18px;border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:10px}
+.tabs{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.tabs::-webkit-scrollbar{display:none}
+.tab{flex:0 0 auto;border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-weight:600;font-size:14px;padding:8px 14px;border-radius:999px;cursor:pointer;display:flex;align-items:center;gap:8px}
+.tab .dot{width:9px;height:9px;border-radius:50%;background:var(--c)}
+.tab .n{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.tab[aria-selected="true"]{background:var(--fg);color:var(--navy);border-color:var(--fg)}
+.tab[aria-selected="true"] .n{color:var(--navy)}
+.tab.prio{border-color:#3A469E}
+.row2{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;padding:3px;gap:3px}
+.seg button{border:0;background:transparent;color:var(--muted);font:inherit;font-weight:700;font-size:13px;padding:6px 14px;border-radius:7px;cursor:pointer;letter-spacing:.04em;text-transform:uppercase}
+.seg button[aria-pressed="true"]{background:var(--lime);color:var(--navy)}
+.legend{display:flex;gap:14px;font-size:12px;color:var(--muted);flex-wrap:wrap}
+.legend b{color:var(--fg);font-weight:600}
+.chip-st{font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;font-weight:700;padding:2px 7px;border-radius:4px;white-space:nowrap}
+.st-c{background:rgba(180,236,79,.14);color:var(--lime)}
+.st-e{background:rgba(245,166,35,.14);color:var(--amber)}
+.note{margin-top:16px;background:var(--card2);border:1px dashed var(--line);border-radius:12px;padding:12px 14px;font-size:13.5px;color:var(--muted)}
+.note b{color:var(--fg)}
+button:focus-visible{outline:2px solid var(--lime);outline-offset:2px}
+
+/* Semanas */
+.weeks{display:flex;flex-direction:column;gap:12px;margin-top:16px}
+.week{display:grid;grid-template-columns:132px 1fr;gap:16px;background:var(--card);border-radius:14px;padding:16px;scroll-margin-top:150px}
+.week.past{opacity:.55}
+.week.now{box-shadow:inset 0 0 0 2px var(--lime)}
+.wk-h{display:flex;flex-direction:column;gap:2px}
+.wk-n{font-family:var(--display);font-weight:800;font-size:13px;letter-spacing:.12em;color:var(--muted);text-transform:uppercase}
+.wk-d{font-family:var(--display);font-weight:900;font-size:24px;line-height:1;text-transform:uppercase}
+.wk-tag{margin-top:6px;align-self:flex-start;font-size:10.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;background:var(--lime);color:var(--navy);padding:2px 7px;border-radius:4px}
+.wk-body{min-width:0;display:flex;flex-direction:column;gap:8px}
+.ongoing{display:flex;flex-wrap:wrap;gap:6px}
+.og{font-size:12px;color:var(--muted);border:1px solid var(--line);border-left:3px solid var(--c);border-radius:6px;padding:3px 8px}
+.ev{display:grid;grid-template-columns:72px 1fr;gap:12px;padding:10px 0;border-top:1px solid var(--line)}
+.ev:first-child{border-top:0}
+.ev-date{font-family:var(--display);font-weight:800;font-size:17px;line-height:1.05;text-transform:uppercase;font-variant-numeric:tabular-nums}
+.ev-date small{display:block;font-size:12px;color:var(--muted);font-weight:600;letter-spacing:.06em}
+.ev-main{min-width:0}
+.ev-t{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;font-weight:650}
+.sp{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--c)}
+.sp::before{content:"";width:8px;height:8px;border-radius:2px;background:var(--c)}
+.key{font-size:10.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;background:var(--fg);color:var(--navy);padding:2px 6px;border-radius:4px}
+.ev-d{color:var(--muted);font-size:13.5px;margin-top:2px}
+.empty{color:var(--muted);font-size:13.5px;font-style:italic}
+
+/* Días */
+.months{display:flex;gap:6px;margin-top:16px;flex-wrap:wrap}
+.months button{border:1px solid var(--line);background:transparent;color:var(--fg);font-family:var(--display);font-weight:800;font-size:18px;letter-spacing:.06em;text-transform:uppercase;padding:6px 14px;border-radius:8px;cursor:pointer}
+.months button[aria-pressed="true"]{background:var(--card);border-color:var(--lime);color:var(--lime)}
+.grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;margin-top:12px}
+.dow{font-size:11px;font-weight:800;letter-spacing:.12em;color:var(--muted);text-transform:uppercase;text-align:center;padding:4px 0}
+.day{min-height:96px;background:var(--card);border-radius:8px;padding:6px;border:1px solid transparent;cursor:pointer;text-align:left;color:var(--fg);font:inherit;display:flex;flex-direction:column;gap:3px;min-width:0}
+.day.out{background:transparent;cursor:default}
+.day.past{opacity:.5}
+.day.today{border-color:var(--lime)}
+.day[aria-pressed="true"]{background:#222A7A;border-color:var(--fg)}
+.day .num{font-family:var(--display);font-weight:800;font-size:18px;line-height:1;font-variant-numeric:tabular-nums}
+.pill{font-size:11px;line-height:1.25;background:var(--card2);border-left:3px solid var(--c);border-radius:3px;padding:2px 4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.more{font-size:11px;color:var(--muted)}
+.dots{display:none;gap:3px;flex-wrap:wrap}
+.dots i{width:7px;height:7px;border-radius:50%;background:var(--c)}
+.detail{margin-top:14px;background:var(--card);border-radius:14px;padding:16px}
+.detail h3{font-family:var(--display);font-weight:900;font-size:26px;text-transform:uppercase;margin:0 0 6px;line-height:1}
+.sources{margin-top:40px;font-size:12.5px;color:var(--muted)}
+.sources h4{font-family:var(--display);font-size:16px;letter-spacing:.1em;text-transform:uppercase;color:var(--fg);margin:0 0 8px}
+.sources ul{margin:0;padding-left:18px;columns:2 260px;column-gap:24px}
+.sources a{color:var(--muted)}
+.sources a:hover{color:var(--lime)}
+
+/* Semana en calendario */
+.wnav{display:flex;align-items:center;gap:8px;margin-top:16px;flex-wrap:wrap}
+.wnav button{border:1px solid var(--line);background:var(--card);color:var(--fg);font-family:var(--display);font-weight:900;font-size:22px;line-height:1;width:40px;height:40px;border-radius:10px;cursor:pointer}
+.wnav button:disabled{opacity:.35;cursor:default}
+.wnav .w-today{width:auto;padding:0 14px;font-size:15px;letter-spacing:.08em;text-transform:uppercase;color:var(--lime);border-color:var(--lime)}
+.wnav-l{font-family:var(--display);font-weight:900;font-size:24px;text-transform:uppercase;line-height:1;flex:1 1 220px;min-width:0}
+.wnav-l small{display:block;font-size:12px;letter-spacing:.14em;color:var(--muted);font-weight:800;margin-bottom:3px}
+.wcal-scroll{overflow-x:auto;margin-top:12px;border-radius:14px}
+.wcal{display:grid;grid-template-columns:repeat(7,minmax(104px,1fr));grid-auto-rows:minmax(30px,auto);gap:4px 4px;min-width:760px;position:relative}
+.wc-h{background:var(--card);border-radius:10px 10px 0 0;padding:8px 8px 6px;display:flex;align-items:baseline;gap:6px}
+.wc-h .dn{font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.wc-h .dd{font-family:var(--display);font-weight:900;font-size:26px;line-height:1;font-variant-numeric:tabular-nums}
+.wc-h .dm{font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase}
+.wc-h.today{background:var(--lime)}.wc-h.today .dn,.wc-h.today .dd,.wc-h.today .dm{color:var(--navy)}
+.wc-h.past,.wc-bg.past{opacity:.55}
+.wc-bg{background:var(--card2);border-radius:0 0 10px 10px;min-height:280px}
+.wc-bg.today{box-shadow:inset 0 0 0 1px var(--lime)}
+.bar-ev{z-index:1;margin:0 3px;border:0;text-align:left;font:inherit;color:var(--fg);cursor:pointer;background:color-mix(in srgb,var(--c) 20%,var(--card));border-left:3px solid var(--c);border-radius:6px;padding:5px 7px;font-size:12.5px;line-height:1.25;min-width:0;display:flex;flex-direction:column;gap:1px;align-self:start}
+.bar-ev .bt{font-weight:650;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.bar-ev .bs{font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--c)}
+.bar-ev.k{box-shadow:inset 0 0 0 1px var(--fg)}
+.bar-ev.cl{border-top-left-radius:0;border-bottom-left-radius:0;margin-left:0}
+.bar-ev.cr{border-top-right-radius:0;border-bottom-right-radius:0;margin-right:0}
+.bar-ev.est{background-image:repeating-linear-gradient(135deg,transparent 0 6px,rgba(255,255,255,.05) 6px 12px)}
+.bar-ev[aria-pressed="true"]{outline:2px solid var(--fg);outline-offset:1px}
+.wc-empty{grid-column:1/-1;align-self:center;text-align:center;color:var(--muted);font-style:italic;z-index:1;font-size:13.5px}
+
+@media (max-width:640px){
+  .week{grid-template-columns:1fr;gap:8px}
+  .wk-h{flex-direction:row;align-items:baseline;gap:10px;flex-wrap:wrap}
+  .wk-tag{margin-top:0}
+  .day{min-height:54px;padding:5px}
+  .day .pill,.day .more{display:none}
+  .dots{display:flex}
+  .ev{grid-template-columns:62px 1fr}
+}
+@media (prefers-reduced-motion:no-preference){html{scroll-behavior:smooth}}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="top">
+    <div>
+      <div class="eyebrow">RAZA.DO · Agenda deportiva</div>
+      <h1>Calendario <span>deportivo</span></h1>
+    </div>
+    <div class="range">Octubre 2026 a enero 2027</div>
+  </header>
+
+  <div class="bar">
+    <div class="tabs" role="tablist" id="tabs"></div>
+    <div class="row2">
+      <div class="seg" role="group" aria-label="Vista">
+        <button id="v-cal" aria-pressed="true">Semana</button>
+        <button id="v-dia" aria-pressed="false">Mes</button>
+        <button id="v-sem" aria-pressed="false">Agenda</button>
+      </div>
+      <div class="legend"><span><span class="chip-st st-c">Confirmado</span></span><span><span class="chip-st st-e">Estimado</span> fecha por calendario de la liga o por referencia</span><span><span class="key">Clave</span> <b>interés directo RD</b></span></div>
+    </div>
+  </div>
+
+  <div id="tabnote"></div>
+  <section id="view-cal">
+    <div class="wnav">
+      <button id="w-prev" aria-label="Semana anterior">‹</button>
+      <div class="wnav-l" id="w-label"></div>
+      <button id="w-next" aria-label="Semana siguiente">›</button>
+      <button id="w-today" class="w-today">Hoy</button>
+    </div>
+    <div class="wcal-scroll"><div class="wcal" id="wcal"></div></div>
+    <div class="detail" id="wdetail"></div>
+  </section>
+  <section id="view-sem" class="weeks" aria-live="polite" hidden></section>
+  <section id="view-dia" hidden>
+    <div class="months" id="months"></div>
+    <div class="grid" id="grid"></div>
+    <div class="detail" id="detail"></div>
+  </section>
+
+  <div class="note"><b>Después de enero:</b> Serie del Caribe en Hermosillo, del 1 al 7 de febrero de 2027, y Super Bowl LXI el 14 de febrero de 2027. Las fechas marcadas como estimadas deben validarse cuando las ligas publiquen calendario de postemporada.</div>
+
+  <section class="sources">
+    <h4>Fuentes</h4>
+    <ul>
+      <li><a href="https://www.elcaribe.com.do/deportes/lidom-2026-27-inicia-16-octubre-licey-escogido/" target="_blank" rel="noopener">El Caribe · LIDOM 2026-27</a></li>
+      <li><a href="https://revistamercado.do/actualidad/la-pelota-dominicana-regresa-cuando-inicia-lidom-2026-2027/" target="_blank" rel="noopener">Revista Mercado · pausa LIDOM</a></li>
+      <li><a href="https://www.mediotiempo.com/beisbol/calendario-resultados-y-tabla-de-posiciones-del-round-robin-lidom-2026" target="_blank" rel="noopener">Mediotiempo · Round Robin temporada anterior</a></li>
+      <li><a href="https://www.luznoticias.mx/2026-06-25/deportes/serie-del-caribe-hermosillo-2027-del-1-al-7-de-febrero/294470" target="_blank" rel="noopener">CBPC · Serie del Caribe 2027</a></li>
+      <li><a href="https://www.fantasynerds.com/news/story/2026/08/13/2026-mlb-playoff-schedule-key-dates-and-broadcast-information-released-1595429" target="_blank" rel="noopener">Postemporada MLB 2026</a></li>
+      <li><a href="https://www.justbaseball.com/?p=245063" target="_blank" rel="noopener">Just Baseball · fechas del receso MLB</a></li>
+      <li><a href="https://www.foxsports.com/stories/nba/when-does-2026-27-nba-season-start-opening-night-schedule" target="_blank" rel="noopener">Fox Sports · NBA 2026-27</a></li>
+      <li><a href="https://thebasketballfans.com/stats/nba-schedule-2026-27/" target="_blank" rel="noopener">Calendario NBA Cup</a></li>
+      <li><a href="https://es.wikipedia.org/wiki/Clasificaci%C3%B3n_para_la_Copa_Mundial_de_Baloncesto_de_2027_(Am%C3%A9ricas)" target="_blank" rel="noopener">Clasificatorio FIBA Américas 2027</a></li>
+      <li><a href="https://en.volleyballworld.com/news/eight-teams-confirmed-for-the-2026-fivb-women-s-club-world-championship-in-sao-paulo" target="_blank" rel="noopener">Volleyball World · Mundial de Clubes femenino</a></li>
+      <li><a href="https://allsportdb.com/Events/2026-FIVB-Volleyball-Mens-Club-World-Championship-21002" target="_blank" rel="noopener">Mundial de Clubes masculino</a></li>
+      <li><a href="https://www.elnuevodia.com/deportes/voleibol/notas/el-voleibol-superior-masculino-revela-su-formato-para-2026-solo-un-equipo-quedara-fuera-de-los-playoffs/" target="_blank" rel="noopener">El Nuevo Día · LVSM Puerto Rico</a></li>
+      <li><a href="https://statsniper.com/es/blog/soccer/champions-league-fixtures-2026-27-matchday-1/" target="_blank" rel="noopener">Champions League 2026-27</a></li>
+      <li><a href="https://www.elgrafico.com.ar/articulo/conmebol-libertadores/95442/conmebol-oficializo-las-sedes-y-las-fechas-de-las-finales-de-las-copas-libertadores-y-sudamericana" target="_blank" rel="noopener">El Gráfico · finales Conmebol</a></li>
+      <li><a href="https://vanguardia.com.mx/deportes/calendario-oficial-del-apertura-2026-de-la-liga-mx-fechas-clave-partido-inaugural-y-liguilla-GG21272271" target="_blank" rel="noopener">Vanguardia · Liga MX Apertura 2026</a></li>
+      <li><a href="https://www.flashscore.com/news/complete-guide-to-the-2026-nfl-season/d6hcuH5s/" target="_blank" rel="noopener">Flashscore · NFL 2026</a></li>
+      <li><a href="https://www.record.com.mx/historia/nfl-2026-estas-son-las-fechas-para-marcar-en-el-calendario-de-la-proxima-temporada-2026050406203772765" target="_blank" rel="noopener">Récord · fechas NFL</a></li>
+      <li><a href="https://www.sportstravelmagazine.com/?p=79626" target="_blank" rel="noopener">Sports Travel · NFL internacional</a></li>
+      <li><a href="https://www.espabox.com/las-grandes-peleas-confirmadas-para-el-proximo-otono-con-octubre-muy-potente/" target="_blank" rel="noopener">Espabox · boxeo otoño</a></li>
+      <li><a href="https://www.clarosports.com/boxeo/cuando-pelea-canelo-alvarez-calendario-y-agenda-completa-de-box-en-2026/" target="_blank" rel="noopener">Claro Sports · Canelo y agenda</a></li>
+      <li><a href="https://www.postwrestling.com/2026/09/19/ciryl-gane-vs-josh-hokit-kayla-harrison-vs-amanda-nunes-to-headline-ufc-334-at-madison-square-garden/" target="_blank" rel="noopener">POST Wrestling · UFC 334</a></li>
+      <li><a href="https://middleeasy.com/mma-news/ufc-334-madison-square-garden-ufc-335-las-vegas-2026/" target="_blank" rel="noopener">UFC 334 y 335</a></li>
+    </ul>
+  </section>
+</div>
+
+<script>
+const SPORTS={
+  beis:{n:"Béisbol",c:"var(--c-beis)",prio:1},
+  basket:{n:"Baloncesto",c:"var(--c-basket)",prio:1},
+  voley:{n:"Voleibol",c:"var(--c-voley)",prio:1},
+  futbol:{n:"Fútbol",c:"var(--c-futbol)"},
+  nfl:{n:"NFL",c:"var(--c-nfl)"},
+  combate:{n:"Boxeo y UFC",c:"var(--c-combate)"}
+};
+// s,e: AAAA-MM-DD · st: c confirmado, e estimado · k: clave para RD
+const EV=[
+ // BÉISBOL
+ {sp:"beis",s:"2026-10-01",t:"MLB · Wild Card, juego 3",d:"Solo en las series que lleguen al tercer juego.",st:"c"},
+ {sp:"beis",s:"2026-10-03",e:"2026-10-10",t:"MLB · Series Divisionales",d:"ALDS por TBS, NLDS por FOX y FS1. Al mejor de cinco.",st:"e"},
+ {sp:"beis",s:"2026-10-11",e:"2026-10-21",t:"MLB · Series de Campeonato",d:"ALCS y NLCS al mejor de siete. Fechas aproximadas.",st:"e"},
+ {sp:"beis",s:"2026-10-16",t:"LIDOM · Día inaugural 2026-27",d:"Tigres del Licey vs Leones del Escogido en el Quisqueya, más dos juegos en simultáneo. Temporada dedicada a Héctor Rizek Llabaly, Copa BanReservas.",st:"c",k:1},
+ {sp:"beis",s:"2026-10-16",e:"2026-12-22",t:"LIDOM · Serie regular",d:"Seis equipos: Licey, Escogido, Águilas, Estrellas, Toros y Gigantes.",st:"c",k:1,long:1},
+ {sp:"beis",s:"2026-10-23",e:"2026-10-31",t:"MLB · Serie Mundial",d:"Todos los juegos por FOX. Juego 7, si hace falta, el 31 de octubre.",st:"c",k:1},
+ {sp:"beis",s:"2026-11-09",e:"2026-11-12",t:"MLB · Reuniones de gerentes generales",d:"Las Vegas. Arranca el mercado de agentes libres.",st:"c"},
+ {sp:"beis",s:"2026-11-11",t:"MLB · Ceremonia de premios",d:"Hank Aaron, Mariano Rivera y Trevor Hoffman, Regreso del Año, equipos All-MLB.",st:"c"},
+ {sp:"beis",s:"2026-12-01",t:"MLB · Vence el convenio colectivo",d:"A las 11:59 pm. Riesgo de paro patronal que puede afectar el invierno de MLB.",st:"c"},
+ {sp:"beis",s:"2026-12-04",e:"2026-12-06",t:"LIDOM · Pausa de Fenapepro",d:"Fin de semana sin juegos asignado a la Federación de Peloteros.",st:"c",k:1},
+ {sp:"beis",s:"2026-12-07",e:"2026-12-09",t:"MLB · Winter Meetings",d:"San Diego. Sujetas a lo que pase con el convenio colectivo.",st:"e"},
+ {sp:"beis",s:"2026-12-26",e:"2027-01-18",t:"LIDOM · Round Robin",d:"Los cuatro mejores, todos contra todos. Fechas estimadas por la temporada anterior, con receso el 31 de diciembre y el 1 de enero.",st:"e",k:1,long:1},
+ {sp:"beis",s:"2027-01-19",t:"MLB · Anuncio Salón de la Fama 2027",d:"Votación de la BBWAA. Fecha estimada.",st:"e"},
+ {sp:"beis",s:"2027-01-21",e:"2027-01-28",t:"LIDOM · Serie Final",d:"Al mejor de siete. Define al representante dominicano en la Serie del Caribe. Fechas estimadas.",st:"e",k:1},
+ // BALONCESTO
+ {sp:"basket",s:"2026-10-20",t:"NBA · Noche inaugural",d:"Celtics en Detroit, debut de LeBron con los 76ers en el Garden ante los Knicks campeones, Thunder en San Antonio.",st:"c",k:1},
+ {sp:"basket",s:"2026-10-30",e:"2026-11-27",t:"NBA Cup · Fase de grupos",d:"Cuarta edición del torneo de temporada.",st:"c",long:1},
+ {sp:"basket",s:"2026-11-27",t:"FIBA · Colombia vs República Dominicana",d:"Clasificatorio al Mundial Qatar 2027, ventana 5, en Cali. RD llega segunda del Grupo E.",st:"c",k:1},
+ {sp:"basket",s:"2026-11-30",t:"FIBA · Chile vs República Dominicana",d:"Clasificatorio al Mundial Qatar 2027, en Santiago de Chile.",st:"c",k:1},
+ {sp:"basket",s:"2026-12-04",e:"2026-12-05",t:"NBA Cup · Cuartos de final",st:"c"},
+ {sp:"basket",s:"2026-12-08",e:"2026-12-09",t:"NBA Cup · Semifinales",st:"c"},
+ {sp:"basket",s:"2026-12-11",t:"NBA Cup · Final",d:"Hinkle Fieldhouse.",st:"c"},
+ {sp:"basket",s:"2026-12-25",t:"NBA · Juegos de Navidad",d:"Cinco juegos: Spurs vs Knicks (revancha de la final), 76ers vs Lakers con LeBron, Heat vs Celtics, Thunder vs Timberwolves, Nuggets vs Warriors.",st:"c",k:1},
+ // VOLEIBOL
+ {sp:"voley",s:"2026-10-23",t:"Voleibol Superior Masculino de Puerto Rico · Inauguración",d:"Cafeteros de Yauco reciben a Patriotas de Lares. Liga de referencia en el Caribe.",st:"c"},
+ {sp:"voley",s:"2026-12-08",e:"2026-12-13",t:"FIVB · Mundial de Clubes femenino",d:"São Paulo, Brasil. Ocho clubes: Osasco, VakıfBank, Eczacıbaşı, NEC Red Rockets, Alianza Lima, Al Ahly, entre otros.",st:"c",k:1},
+ {sp:"voley",s:"2026-12-15",e:"2026-12-20",t:"FIVB · Mundial de Clubes masculino",d:"Sede por confirmar.",st:"e"},
+ // FÚTBOL
+ {sp:"futbol",s:"2026-10-13",e:"2026-10-14",t:"Champions League · Jornada 2",d:"Atlético vs Manchester United, Galatasaray vs Barcelona, Inter vs Brujas.",st:"c"},
+ {sp:"futbol",s:"2026-10-20",e:"2026-10-21",t:"Champions League · Jornada 3",st:"c"},
+ {sp:"futbol",s:"2026-11-03",e:"2026-11-04",t:"Champions League · Jornada 4",st:"c"},
+ {sp:"futbol",s:"2026-11-21",t:"Final Copa Sudamericana",d:"Barranquilla, Colombia.",st:"c"},
+ {sp:"futbol",s:"2026-11-24",e:"2026-11-25",t:"Champions League · Jornada 5",st:"c"},
+ {sp:"futbol",s:"2026-11-25",e:"2026-11-29",t:"Liga MX · Cuartos de final",d:"Ida 25 y 26, vuelta 28 y 29 de noviembre.",st:"c"},
+ {sp:"futbol",s:"2026-11-28",t:"Final Copa Libertadores",d:"Estadio Centenario, Montevideo.",st:"c",k:1},
+ {sp:"futbol",s:"2026-12-02",e:"2026-12-06",t:"Liga MX · Semifinales",st:"c"},
+ {sp:"futbol",s:"2026-12-08",e:"2026-12-09",t:"Champions League · Jornada 6",st:"c"},
+ {sp:"futbol",s:"2026-12-09",t:"FIFA · Arranca la Copa Intercontinental",d:"Qatar, con Toluca como campeón de Concacaf.",st:"c"},
+ {sp:"futbol",s:"2026-12-10",t:"Liga MX · Final de ida",d:"Pasa al 24 de diciembre si Toluca llega a la final.",st:"c"},
+ {sp:"futbol",s:"2026-12-13",t:"Liga MX · Final de vuelta",d:"Pasa al 27 de diciembre si Toluca llega a la final.",st:"c"},
+ {sp:"futbol",s:"2027-01-20",e:"2027-01-21",t:"Champions League · Jornada 7",d:"Fecha estimada.",st:"e"},
+ {sp:"futbol",s:"2027-01-27",t:"Champions League · Jornada 8",d:"Cierre de la fase liga con 18 partidos simultáneos.",st:"c",k:1},
+ // NFL
+ {sp:"nfl",s:"2026-10-18",t:"NFL · Texans vs Jaguars en Wembley",d:"Semana 6, serie internacional en Londres.",st:"c"},
+ {sp:"nfl",s:"2026-11-25",t:"NFL · Primer juego de víspera de Acción de Gracias",d:"Packers en Los Ángeles ante los Rams.",st:"c"},
+ {sp:"nfl",s:"2026-11-26",t:"NFL · Acción de Gracias",d:"Bears vs Lions, Eagles vs Cowboys, Chiefs vs Bills.",st:"c",k:1},
+ {sp:"nfl",s:"2026-12-25",t:"NFL · Juegos de Navidad",d:"Navidad cae viernes.",st:"c"},
+ {sp:"nfl",s:"2027-01-16",e:"2027-01-18",t:"NFL · Playoffs, ronda de comodines",d:"Arranque de postemporada rumbo al Super Bowl LXI.",st:"c",k:1},
+ {sp:"nfl",s:"2027-01-23",e:"2027-01-24",t:"NFL · Ronda divisional",st:"e"},
+ {sp:"nfl",s:"2027-01-31",t:"NFL · Finales de conferencia",st:"e"},
+ // COMBATE
+ {sp:"combate",s:"2026-10-17",t:"Boxeo · Dubois vs Wardley",d:"Título pesado OMB en Londres. Mismo día: Fundora vs Hadribeaj, superwélter CMB, en Carson.",st:"c"},
+ {sp:"combate",s:"2026-10-24",t:"Boxeo · Dalton Smith vs Alberto Puello",d:"El dominicano Puello va por el título superligero CMB en Sheffield.",st:"c",k:1},
+ {sp:"combate",s:"2026-10-24",t:"UFC 333 · Volkanovski vs Evloev",d:"Abu Dabi. También Petr Yan vs Merab Dvalishvili, tercera pelea.",st:"c"},
+ {sp:"combate",s:"2026-10-31",t:"Boxeo · Canelo vs Mbilli",d:"Título supermediano CMB en Riad.",st:"c",k:1},
+ {sp:"combate",s:"2026-11-07",t:"Boxeo · Buatsi vs Hutchinson",d:"Interino semipesado CMB en Londres. Mismo día: Taduran vs Brandon Moreno, mínimo FIB.",st:"c"},
+ {sp:"combate",s:"2026-11-14",t:"UFC 334 · Gane vs Hokit",d:"Madison Square Garden. Título pesado, más Kayla Harrison vs Amanda Nunes.",st:"c",k:1},
+ {sp:"combate",s:"2026-12-12",t:"UFC 335 · Cierre del año",d:"T-Mobile Arena, Las Vegas. Cartelera por anunciar.",st:"c"}
+];
+
+const M=["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"];
+const MF=["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+const DW=["dom","lun","mar","mié","jue","vie","sáb"];
+const P=s=>{const[a,b,c]=s.split("-").map(Number);return new Date(a,b-1,c)};
+const key=d=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+const add=(d,n)=>{const x=new Date(d);x.setDate(x.getDate()+n);return x};
+EV.forEach(e=>{e.S=P(e.s);e.E=P(e.e||e.s)});
+const now=new Date();const TODAY=new Date(now.getFullYear(),now.getMonth(),now.getDate());
+
+const WMIN=P("2026-09-28"),WMAX=P("2027-01-25");
+const monday=d=>add(d,-((d.getDay()+6)%7));
+const dd=(a,b)=>Math.round((b-a)/864e5);
+let state={sp:"all",view:"cal",month:9,year:2026,sel:null,wk:null,ev:null};
+try{const v=localStorage.getItem("raza-cal-view");if(["cal","dia","sem"].includes(v))state.view=v;}catch(e){}
+{let m=monday(TODAY);state.wk=m<WMIN?WMIN:m>WMAX?WMAX:m;}
+
+const list=()=>EV.filter(e=>state.sp==="all"||e.sp===state.sp).sort((a,b)=>a.S-b.S||(b.k||0)-(a.k||0));
+const fmtR=e=>{const s=e.S,f=e.E;
+  if(+s===+f) return `${s.getDate()} ${M[s.getMonth()]}<small>${DW[s.getDay()]}</small>`;
+  if(s.getMonth()===f.getMonth()) return `${s.getDate()} al ${f.getDate()}<small>${M[s.getMonth()]}</small>`;
+  return `${s.getDate()} ${M[s.getMonth()]}<small>al ${f.getDate()} ${M[f.getMonth()]}</small>`;};
+const evHTML=e=>{const S=SPORTS[e.sp];return `<div class="ev"><div class="ev-date">${fmtR(e)}</div><div class="ev-main"><div class="ev-t"><span class="sp" style="--c:${S.c}">${S.n}</span>${e.k?'<span class="key">Clave</span>':''}<span class="chip-st ${e.st==="c"?"st-c":"st-e"}">${e.st==="c"?"Confirmado":"Estimado"}</span></div><div style="font-weight:650;margin-top:3px">${e.t}</div>${e.d?`<div class="ev-d">${e.d}</div>`:""}</div></div>`};
+
+function tabs(){
+  const t=document.getElementById("tabs");
+  const items=[["all","Todo",null],...Object.entries(SPORTS).map(([k,v])=>[k,v.n,v])];
+  t.innerHTML=items.map(([k,n,v])=>{const c=k==="all"?EV.length:EV.filter(e=>e.sp===k).length;
+    return `<button class="tab${v&&v.prio?" prio":""}" role="tab" id="tab-${k}" aria-selected="${state.sp===k}" data-k="${k}">${v?`<span class="dot" style="--c:${v.c}"></span>`:""}${n}<span class="n">${c}</span></button>`}).join("");
+  t.querySelectorAll(".tab").forEach(b=>b.onclick=()=>{state.sp=b.dataset.k;render()});
+  const note=document.getElementById("tabnote");
+  note.innerHTML=state.sp==="voley"?`<div class="note"><b>Voleibol en República Dominicana:</b> la Liga de Voleibol Superior del Distrito arranca en marzo y las Reinas del Caribe cerraron su ciclo de 2026 con el oro centroamericano en agosto. No hay compromisos oficiales publicados de la selección entre octubre y enero; el interés del periodo está en los Mundiales de Clubes y en las dominicanas que juegan en ligas de fuera.</div>`:"";
+}
+
+function weeks(){
+  const box=document.getElementById("view-sem");const evs=list();
+  let start=P("2026-09-28");const end=P("2027-01-31");let out="",i=1;
+  while(start<=end){const wEnd=add(start,6);
+    const inW=evs.filter(e=>e.S<=wEnd&&e.E>=start);
+    const og=inW.filter(e=>e.long&&!(e.S>=start&&e.S<=wEnd));
+    const main=inW.filter(e=>!og.includes(e));
+    const past=wEnd<TODAY, cur=TODAY>=start&&TODAY<=wEnd;
+    const lbl=start.getMonth()===wEnd.getMonth()?`${start.getDate()} al ${wEnd.getDate()} ${M[start.getMonth()]}`:`${start.getDate()} ${M[start.getMonth()]} al ${wEnd.getDate()} ${M[wEnd.getMonth()]}`;
+    out+=`<article class="week${past?" past":""}${cur?" now":""}" id="w${i}"><div class="wk-h"><div class="wk-n">Semana ${i}</div><div class="wk-d">${lbl}</div>${cur?'<span class="wk-tag">Esta semana</span>':""}</div><div class="wk-body">${og.length?`<div class="ongoing">${og.map(e=>`<span class="og" style="--c:${SPORTS[e.sp].c}">En curso · ${e.t}</span>`).join("")}</div>`:""}${main.length?`<div>${main.map(evHTML).join("")}</div>`:(og.length?"":'<div class="empty">Sin eventos en esta categoría.</div>')}</div></article>`;
+    start=add(start,7);i++;}
+  box.innerHTML=out;
+}
+
+function days(){
+  const mb=document.getElementById("months");
+  const ms=[[2026,9],[2026,10],[2026,11],[2027,0]];
+  mb.innerHTML=ms.map(([y,m])=>`<button data-y="${y}" data-m="${m}" aria-pressed="${state.year===y&&state.month===m}">${MF[m]}${m===0?" 27":""}</button>`).join("");
+  mb.querySelectorAll("button").forEach(b=>b.onclick=()=>{state.year=+b.dataset.y;state.month=+b.dataset.m;state.sel=null;render()});
+  const g=document.getElementById("grid");const evs=list();
+  const first=new Date(state.year,state.month,1);const off=(first.getDay()+6)%7;
+  const dim=new Date(state.year,state.month+1,0).getDate();
+  let h=["lun","mar","mié","jue","vie","sáb","dom"].map(d=>`<div class="dow">${d}</div>`).join("");
+  for(let i=0;i<off;i++)h+=`<div class="day out" aria-hidden="true"></div>`;
+  for(let d=1;d<=dim;d++){const dt=new Date(state.year,state.month,d);const k=key(dt);
+    const de=evs.filter(e=>!e.long&&e.S<=dt&&e.E>=dt);
+    const pills=de.slice(0,3).map(e=>`<div class="pill" style="--c:${SPORTS[e.sp].c}">${e.t.split(" · ")[1]||e.t}</div>`).join("");
+    h+=`<button class="day${dt<TODAY?" past":""}${+dt===+TODAY?" today":""}" data-k="${k}" aria-pressed="${state.sel===k}" aria-label="${d} de ${MF[state.month]}, ${de.length} eventos"><span class="num">${d}</span>${pills}${de.length>3?`<span class="more">+${de.length-3} más</span>`:""}<span class="dots">${de.map(e=>`<i style="--c:${SPORTS[e.sp].c}"></i>`).join("")}</span></button>`;}
+  g.innerHTML=h;
+  g.querySelectorAll(".day[data-k]").forEach(b=>b.onclick=()=>{state.sel=b.dataset.k;render();document.getElementById("detail").scrollIntoView({block:"nearest"})});
+  if(!state.sel){const t=key(TODAY);state.sel=(TODAY.getFullYear()===state.year&&TODAY.getMonth()===state.month)?t:key(first);
+    g.querySelector(`[data-k="${state.sel}"]`)?.setAttribute("aria-pressed","true");}
+  const sd=P(state.sel);const dayEv=evs.filter(e=>e.S<=sd&&e.E>=sd);
+  const main=dayEv.filter(e=>!e.long),og=dayEv.filter(e=>e.long);
+  document.getElementById("detail").innerHTML=`<h3>${DW[sd.getDay()]} ${sd.getDate()} de ${MF[sd.getMonth()].toLowerCase()}</h3>${og.length?`<div class="ongoing" style="margin:8px 0">${og.map(e=>`<span class="og" style="--c:${SPORTS[e.sp].c}">En curso · ${e.t}</span>`).join("")}</div>`:""}${main.length?main.map(evHTML).join(""):'<div class="empty">Sin eventos este día en esta categoría.</div>'}`;
+}
+
+function weekCal(){
+  const ws=state.wk,we=add(ws,6);
+  const n=dd(WMIN,ws)/7+1;
+  const lbl=ws.getMonth()===we.getMonth()?`${ws.getDate()} al ${we.getDate()} de ${MF[ws.getMonth()].toLowerCase()}`:`${ws.getDate()} ${M[ws.getMonth()]} al ${we.getDate()} ${M[we.getMonth()]}`;
+  document.getElementById("w-label").innerHTML=`<small>Semana ${n} de 18${+monday(TODAY)===+ws?" · esta semana":""}</small>${lbl}`;
+  document.getElementById("w-prev").disabled=+ws<=+WMIN;
+  document.getElementById("w-next").disabled=+ws>=+WMAX;
+  const evs=list().filter(e=>e.S<=we&&e.E>=ws).sort((a,b)=>a.S-b.S||(b.E-b.S)-(a.E-a.S)||(b.k||0)-(a.k||0));
+  const lanes=[];
+  const pl=evs.map(e=>{const s=Math.max(0,dd(ws,e.S)),f=Math.min(6,dd(ws,e.E));
+    let l=lanes.findIndex(end=>end<s);if(l<0){l=lanes.length;lanes.push(f)}else lanes[l]=f;return{e,s,f,l}});
+  const L=Math.max(lanes.length,1);
+  let h="";
+  for(let i=0;i<7;i++){const d=add(ws,i);const c=+d===+TODAY?" today":d<TODAY?" past":"";
+    h+=`<div class="wc-h${c}" style="grid-column:${i+1};grid-row:1"><span class="dn">${DW[d.getDay()]}</span><span class="dd">${d.getDate()}</span><span class="dm">${M[d.getMonth()]}</span></div>`;
+    h+=`<div class="wc-bg${c}" style="grid-column:${i+1};grid-row:2 / span ${L+1}"></div>`;}
+  if(!pl.length)h+=`<div class="wc-empty" style="grid-row:2">Sin eventos esta semana en esta categoría.</div>`;
+  pl.forEach(({e,s,f,l})=>{const S=SPORTS[e.sp];const i=EV.indexOf(e);
+    const cl=e.S<ws,cr=e.E>we;
+    h+=`<button class="bar-ev${e.k?" k":""}${e.st==="e"?" est":""}${cl?" cl":""}${cr?" cr":""}" style="--c:${S.c};grid-column:${s+1} / ${f+2};grid-row:${l+2}" data-i="${i}" aria-pressed="${state.ev===i}"><span class="bs">${cl?"◂ ":""}${S.n}${e.k?" · Clave":""}</span><span class="bt">${e.t}${cr?" ▸":""}</span></button>`;});
+  const g=document.getElementById("wcal");g.innerHTML=h;
+  g.querySelectorAll(".bar-ev").forEach(b=>b.onclick=()=>{const i=+b.dataset.i;state.ev=state.ev===i?null:i;render();if(state.ev!==null)document.getElementById("wdetail").scrollIntoView({block:"nearest"})});
+  const sel=state.ev!==null&&evs.includes(EV[state.ev])?[EV[state.ev]]:null;
+  document.getElementById("wdetail").innerHTML=sel?`<h3>Detalle</h3>${evHTML(sel[0])}`:`<h3>Esta semana</h3>${evs.length?evs.map(evHTML).join(""):'<div class="empty">Sin eventos en esta categoría.</div>'}`;
+}
+function shiftWeek(n){const w=add(state.wk,7*n);if(w<WMIN||w>WMAX)return;state.wk=w;state.ev=null;render()}
+document.getElementById("w-prev").onclick=()=>shiftWeek(-1);
+document.getElementById("w-next").onclick=()=>shiftWeek(1);
+document.getElementById("w-today").onclick=()=>{let m=monday(TODAY);state.wk=m<WMIN?WMIN:m>WMAX?WMAX:m;state.ev=null;render()};
+
+function render(){
+  tabs();
+  ["cal","dia","sem"].forEach(v=>{document.getElementById("v-"+v).setAttribute("aria-pressed",state.view===v);document.getElementById("view-"+v).hidden=state.view!==v});
+  if(state.view==="sem")weeks();else if(state.view==="dia")days();else weekCal();
+}
+["cal","dia","sem"].forEach(v=>document.getElementById("v-"+v).onclick=()=>{state.view=v;try{localStorage.setItem("raza-cal-view",v)}catch(e){}render()});
+if(TODAY>=P("2026-10-01")&&TODAY<=P("2027-01-31")){state.year=TODAY.getFullYear();state.month=TODAY.getMonth();}
+render();
+</script>
+</body>
+</html>
